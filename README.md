@@ -245,79 +245,6 @@ Response:
 ```
 
 ---
-
-## 🧪 Testing Flow
-
-### 1. Kiểm tra Backend
-```bash
-cd backend
-node server.js
-
-# Expected output:
-# 🚀 E-Metric Hub Backend Server Started
-# 📍 Server running at: http://localhost:5000
-# 🎭 Mode: MOCK (Development)
-```
-
-### 2. Kiểm tra Frontend
-```bash
-cd frontend
-npm run dev
-
-# Expected output:
-# VITE v5.x.x ready in xxx ms
-# ➜ Local: http://localhost:5173/
-```
-
-### 3. Test Login Flow
-1. Mở `http://localhost:5173`
-2. Click "Đăng nhập với Shopee"
-3. Modal hiển thị → Click "Tiếp tục đăng nhập"
-4. Tự động redirect → Mock OAuth page
-5. Auto-callback → Processing screen (20% → 100%)
-6. Redirect về Dashboard ✅
-
-### 4. Test Dashboard
-- ✅ Kiểm tra 4 KPI cards hiển thị số liệu
-- ✅ Kiểm tra biểu đồ Doanh thu có 10 tháng data (T1 - T10)
-- ✅ Kiểm tra Pie chart có 10 categories
-- ✅ Tab "Sản phẩm" hiển thị bảng với 55 items
-- ✅ Refresh trang (F5) → Không bị logout
-
-### 5. Test Logout
-1. Click nút "Đăng xuất"
-2. Confirm dialog
-3. Quay về login screen ✅
-
----
-
-## 🐛 Troubleshooting
-
-### ❌ Backend không start
-```bash
-# Check port 5000 có bị chiếm không
-netstat -ano | findstr :5000
-
-# Kill process nếu cần
-taskkill /PID <PID> /F
-```
-
-### ❌ Frontend không kết nối Backend
-- Kiểm tra `backend/.env` → `FRONTEND_URL=http://localhost:5173`
-- Kiểm tra `frontend/src/services/api.js` → `baseURL: 'http://localhost:5000'`
-
-### ❌ Đã đăng nhập nhưng bị logout
-- Mở DevTools → Console → Kiểm tra logs `🔍 Checking authentication...`
-- Check localStorage: `localStorage.getItem('shopee_tokens')`
-- Nếu null → Backend chưa lưu token, check callback handler
-
-### ❌ Dashboard không hiển thị data
-- Mở DevTools → Network → Check request `/api/dashboard/data`
-- Kiểm tra response có `orders: []` hoặc `products: []` không
-- Nếu có → Check `backend/mockData/shopeeData.js` line 226: `length: 250`
-
----
-
 ## 📝 Notes
 
 ### Mock Mode
@@ -356,8 +283,9 @@ MIT License - Free to use for personal/commercial projects
 
 ## 👨‍💻 Contact
 
-Project Link: [https://github.com/yourusername/e-metric-hub](https://github.com/yourusername/e-metric-hub)
+Project Link: [https://github.com/Ngnquoc1/E-Metric-Hub.git](https://github.com/Ngnquoc1/E-Metric-Hub.git)
+Gmail: [nhuquoc1104@gmail.com](nhuquoc1104@gmail.com)
 
 ---
 
-**Made with ❤️ by AI & Human**
+**Made with ❤️ by ICS**
