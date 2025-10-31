@@ -1,0 +1,74 @@
+// Load env FIRST before anything else
+import './config/env.js';
+
+import express from 'express';
+import cors from 'cors';
+import authRoutes from './routes/auth.js';
+import shopeeRoutes from './routes/shopee.js';
+
+const app = express();
+const PORT = process.env.PORT || 5000;
+
+// Debug: Verify environment variables loaded
+console.log('🔍 ENV loaded (server.js):');
+console.log('  - USE_MOCK_MODE:', JSON.stringify(process.env.USE_MOCK_MODE));
+console.log('  - PORT:', process.env.PORT);
+console.log('  - FRONTEND_URL:', process.env.FRONTEND_URL);
+
+// Middleware
+app.use(cors({
+    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    credentials: true
+}));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Request logging
+app.use((req, res, next) => {
+    console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+    next();
+});
+
+// Routes
+app.get('/', (req, res) => {
+    res.json({
+        message: '🚀 E-Metric Hub Backend API',
+        version: '1.0.0',
+        mode: process.env.USE_MOCK_MODE === 'true' ? 'MOCK' : 'PRODUCTION',
+        endpoints: {
+            auth: '/api/auth',
+            shopee: '/api/shopee'
+        }
+    });
+});
+
+app.use('/api/auth', authRoutes);
+app.use('/api/shopee', shopeeRoutes);
+
+// Error handling
+app.use((err, req, res, next) => {
+    console.error('❌ Error:', err);
+    res.status(err.status || 500).json({
+        error: err.message || 'Internal Server Error',
+        stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+    });
+});
+
+// 404 handler
+app.use((req, res) => {
+    res.status(404).json({
+        error: 'Endpoint not found'
+    });
+});
+
+// Start server
+app.listen(PORT, () => {
+    console.log('='.repeat(50));
+    console.log('🚀 E-Metric Hub Backend Server Started');
+    console.log('='.repeat(50));
+    console.log(`📍 Server running at: http://localhost:${PORT}`);
+    console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`🎭 Mode: ${process.env.USE_MOCK_MODE === 'true' ? 'MOCK (Development)' : 'PRODUCTION (Real Shopee API)'}`);
+    console.log(`🔗 Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:5173'}`);
+    console.log('='.repeat(50));
+});

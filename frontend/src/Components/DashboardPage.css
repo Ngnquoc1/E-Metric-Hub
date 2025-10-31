@@ -1,0 +1,297 @@
+.dashboard-page {
+    padding: 24px;
+    background: linear-gradient(135deg, #f5f7fa 0%, #e8eef5 100%);
+    min-height: calc(100vh - 64px);
+}
+
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+    padding: 24px;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.header-left {
+    flex: 1;
+}
+
+.header-right {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.dashboard-title {
+    font-size: 32px;
+    font-weight: 700;
+    margin: 0 0 8px 0;
+    background: linear-gradient(135deg, #0a58d0 0%, #1976d2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.dashboard-subtitle {
+    font-size: 16px;
+    color: #666;
+    margin: 0;
+}
+
+/* Login Prompt */
+.dashboard-login-prompt {
+    min-height: 80vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+}
+
+.login-card {
+    max-width: 600px;
+    width: 100%;
+    text-align: center;
+    border-radius: 24px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.login-card h2 {
+    font-size: 28px;
+    font-weight: 700;
+    margin: 16px 0 8px;
+}
+
+.login-card p {
+    font-size: 16px;
+    color: #666;
+    margin-bottom: 24px;
+}
+
+/* Loading State */
+.dashboard-loading {
+    min-height: 80vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* Tabs Styling */
+.dashboard-tabs {
+    background: #fff;
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.dashboard-tabs .ant-tabs-nav {
+    margin-bottom: 24px;
+}
+
+.dashboard-tabs .ant-tabs-tab {
+    font-size: 16px;
+    font-weight: 500;
+    padding: 12px 20px;
+}
+
+.dashboard-tabs .ant-tabs-tab-active {
+    font-weight: 600;
+}
+
+/* KPI Cards */
+.kpi-row {
+    margin-bottom: 0;
+}
+
+.kpi-card {
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    transition: all 0.3s ease;
+    height: 100%;
+}
+
+.kpi-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 4px 16px rgba(10, 88, 208, 0.12);
+}
+
+.kpi-card .ant-statistic-title {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 8px;
+}
+
+.kpi-card .ant-statistic-content {
+    font-size: 28px;
+    font-weight: 600;
+}
+
+.kpi-trend {
+    margin-top: 12px;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+}
+
+/* Chart Cards */
+.chart-card {
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    height: 100%;
+}
+
+.chart-card .ant-card-head {
+    border-bottom: 1px solid #f0f0f0;
+    font-weight: 600;
+    font-size: 16px;
+}
+
+.chart-card .ant-card-body {
+    padding: 24px;
+}
+
+/* Table Cards */
+.table-card {
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.table-card .ant-card-head {
+    border-bottom: 1px solid #f0f0f0;
+    font-weight: 600;
+    font-size: 16px;
+}
+
+.table-card .ant-table {
+    font-size: 14px;
+}
+
+.table-card .ant-table-thead > tr > th {
+    background: #fafafa;
+    font-weight: 600;
+    color: #1a1a1a;
+}
+
+.table-card .ant-table-tbody > tr:hover {
+    background: #f5f9ff;
+}
+
+/* Highlighted Row */
+.highlighted-row {
+    background: #e6f4ff !important;
+    font-weight: 500;
+}
+
+.highlighted-row:hover {
+    background: #d6eaff !important;
+}
+
+/* Responsive Design */
+@media (max-width: 992px) {
+    .dashboard-page {
+        padding: 16px;
+    }
+
+    .dashboard-title {
+        font-size: 24px;
+    }
+
+    .dashboard-tabs {
+        padding: 12px;
+    }
+
+    .dashboard-tabs .ant-tabs-tab {
+        font-size: 14px;
+        padding: 10px 16px;
+    }
+
+    .kpi-card .ant-statistic-content {
+        font-size: 24px;
+    }
+}
+
+@media (max-width: 768px) {
+    .dashboard-page {
+        padding: 12px;
+    }
+
+    .dashboard-title {
+        font-size: 20px;
+    }
+
+    .dashboard-subtitle {
+        font-size: 14px;
+    }
+
+    .dashboard-tabs {
+        padding: 8px;
+        border-radius: 8px;
+    }
+
+    .dashboard-tabs .ant-tabs-tab {
+        font-size: 13px;
+        padding: 8px 12px;
+    }
+
+    .kpi-card .ant-statistic-content {
+        font-size: 20px;
+    }
+
+    .kpi-trend {
+        font-size: 12px;
+    }
+
+    .chart-card .ant-card-body {
+        padding: 16px;
+    }
+}
+
+@media (max-width: 576px) {
+    .dashboard-tabs .ant-tabs-tab {
+        font-size: 12px;
+        padding: 6px 8px;
+    }
+
+    .table-card .ant-table {
+        font-size: 12px;
+    }
+}
+
+/* Recharts Custom Styling */
+.recharts-tooltip-wrapper {
+    outline: none;
+}
+
+.recharts-default-tooltip {
+    background: rgba(255, 255, 255, 0.96) !important;
+    border: 1px solid #e8e8e8 !important;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+}
+
+.recharts-legend-wrapper {
+    padding-top: 16px;
+}
+
+/* Custom Scrollbar for Tables */
+.ant-table-body::-webkit-scrollbar {
+    height: 8px;
+}
+
+.ant-table-body::-webkit-scrollbar-track {
+    background: #f0f0f0;
+    border-radius: 4px;
+}
+
+.ant-table-body::-webkit-scrollbar-thumb {
+    background: #bfbfbf;
+    border-radius: 4px;
+}
+
+.ant-table-body::-webkit-scrollbar-thumb:hover {
+    background: #999;
+}

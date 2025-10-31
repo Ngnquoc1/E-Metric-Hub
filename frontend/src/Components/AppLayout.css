@@ -1,0 +1,158 @@
+.app-header {
+  background: #ffffff;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+  padding: 0 50px;
+  height: 72px;
+  line-height: 72px;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.header-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1400px;
+  margin: 0 auto;
+  height: 100%;
+}
+
+.logo-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.logo {
+  height: 40px;
+  width: auto;
+  object-fit: contain;
+}
+
+.logo-text {
+  font-size: 20px;
+  font-weight: 600;
+  color: #0a58d0;
+  white-space: nowrap;
+}
+
+.main-menu {
+  flex: 1;
+  max-width: 600px;
+  margin: 0 40px;
+}
+
+.main-menu .ant-menu-item {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.main-menu .ant-menu-item a {
+  color: #333;
+}
+
+.main-menu .ant-menu-item-selected a {
+  color: #0a58d0;
+}
+
+.user-controls {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.login-text {
+  font-size: 15px;
+  font-weight: 500;
+  color: #333;
+  text-decoration: none;
+  transition: color 0.3s;
+  
+}
+
+.login-text:hover {
+  color: #0a58d0;
+}
+
+.trial-button {
+  font-weight: 500;
+  height: 42px;
+  padding: 0 24px;
+  border-radius: 12px;
+  align-items: center;
+  justify-content: center;
+}
+
+.app-content {
+  background: #f8f9fa;
+  min-height: calc(100vh - 72px);
+}
+
+/* Responsive styles */
+@media (max-width: 992px) {
+  .app-header {
+    padding: 0 20px;
+  }
+
+  .main-menu {
+    display: none;
+  }
+
+  .logo-text {
+    font-size: 16px;
+  }
+
+  .trial-button {
+    height: 40px;
+    padding: 0 20px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 768px) {
+  .login-text {
+    font-size: 14px;
+  }
+
+  .trial-button {
+    height: 38px;
+    padding: 0 16px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 576px) {
+  .app-header {
+    padding: 0 16px;
+  }
+
+  .user-controls {
+    gap: 12px;
+  }
+
+  .login-text {
+    font-size: 13px;
+  }
+
+  .trial-button {
+    height: 36px;
+    padding: 0 14px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 400px) {
+  .logo-text {
+    display: none;
+  }
+
+  .login-text {
+    display: none;
+  }
+
+  .user-controls {
+    gap: 8px;
+  }
+}
