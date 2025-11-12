@@ -48,11 +48,10 @@ const DashboardPage = () => {
     // Check auth on mount (only if not already authenticated)
     useEffect(() => {
         if (!isAuthenticated && !tokens) {
-            console.log('🔍 Checking authentication...');
             dispatch(checkAuth())
                 .unwrap()
                 .then((tokens) => {
-                    console.log('✅ Auth check successful, loading data...');
+                    console.log(' Auth check successful, loading data...');
                     // Auto load data after auth check
                     dispatch(loadDashboardData({
                         accessToken: tokens.access_token,
@@ -60,10 +59,10 @@ const DashboardPage = () => {
                     }));
                 })
                 .catch(() => {
-                    console.log('❌ Not authenticated');
+                    console.log('Not authenticated');
                 });
         } else if (isAuthenticated && tokens && !shopeeData) {
-            console.log('✅ Already authenticated, loading data...');
+            console.log('Already authenticated, loading data...');
             // If authenticated but data not loaded, load it
             dispatch(loadDashboardData({
                 accessToken: tokens.access_token,
@@ -103,9 +102,6 @@ const DashboardPage = () => {
         message.info('Đã đăng xuất');
     };
 
-    // Debug logs
-    console.log('🔍 DashboardPage render:', { isAuthenticated, hasTokens: !!tokens, loading, hasData: !!shopeeData });
-
     // Show loading spinner while checking auth
     if (authLoading && !isAuthenticated) {
         return (
@@ -117,7 +113,7 @@ const DashboardPage = () => {
 
     // Show login page if not authenticated (after check is done)
     if (!isAuthenticated && !tokens) {
-        console.log('❌ Not authenticated, showing login');
+        console.log(' Not authenticated, showing login');
         return (
             <div className="dashboard-login-prompt">
                 <Card className="login-card">

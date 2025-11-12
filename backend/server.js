@@ -5,15 +5,20 @@ import express from 'express';
 import cors from 'cors';
 import authRoutes from './routes/auth.js';
 import shopeeRoutes from './routes/shopee.js';
+import aiRoutes from './routes/ai.js';
+import { connectDB } from './config/database.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Debug: Verify environment variables loaded
+// Debug
 console.log('🔍 ENV loaded (server.js):');
 console.log('  - USE_MOCK_MODE:', JSON.stringify(process.env.USE_MOCK_MODE));
 console.log('  - PORT:', process.env.PORT);
 console.log('  - FRONTEND_URL:', process.env.FRONTEND_URL);
+
+// Connect DB 
+connectDB();
 
 // Middleware
 app.use(cors({
@@ -37,13 +42,15 @@ app.get('/', (req, res) => {
         mode: process.env.USE_MOCK_MODE === 'true' ? 'MOCK' : 'PRODUCTION',
         endpoints: {
             auth: '/api/auth',
-            shopee: '/api/shopee'
+            shopee: '/api/shopee',
+            ai: '/api/ai'
         }
     });
 });
 
 app.use('/api/auth', authRoutes);
 app.use('/api/shopee', shopeeRoutes);
+app.use('/api/ai', aiRoutes);
 
 // Error handling
 app.use((err, req, res, next) => {
