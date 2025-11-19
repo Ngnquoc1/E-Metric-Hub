@@ -38,3 +38,18 @@ desktop.ini
 # Testing
 coverage/
 .nyc_output/
+
+# Large model files
+*.safetensors
+archive/
+ai_service/absa_phobert_model/model.safetensors
+ai_service/venv/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+venv/
+env/
