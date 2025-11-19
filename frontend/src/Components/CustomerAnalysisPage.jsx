@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import axios from 'axios';
 import {
     fetchProductReviews,
     fetchProductInsights,
@@ -10,7 +11,8 @@ import './CustomerAnalysisPage.css';
 
 const CustomerAnalysisPage = () => {
     const dispatch = useDispatch();
-    const { user } = useSelector((state) => state.auth);
+    // ✅ Use consistent Redux auth state
+    const { tokens } = useSelector((state) => state.auth);
     const {
         currentProduct,
         reviews,
@@ -24,6 +26,8 @@ const CustomerAnalysisPage = () => {
 
     const { data: dashboardData } = useSelector((state) => state.dashboard);
     const [products, setProducts] = useState([]);
+    const [aiSuggestions, setAiSuggestions] = useState(null);
+    const [loadingAI, setLoadingAI] = useState(false);
 
     // Load products from dashboard
     useEffect(() => {
@@ -34,9 +38,9 @@ const CustomerAnalysisPage = () => {
 
     // Load data when product selected
     useEffect(() => {
-        // Use mock credentials if not logged in
-        const accessToken = user?.accessToken || 'mock_access_token';
-        const shopId = user?.shopId || '12345';
+        // ✅ Use consistent auth tokens (same as Dashboard)
+        const accessToken = tokens?.access_token || 'mock_access_token';
+        const shopId = tokens?.shop_id || '12345';
         
         if (selectedProduct) {
             console.log('🔄 Loading analysis for product:', selectedProduct.item_id);
@@ -72,7 +76,7 @@ const CustomerAnalysisPage = () => {
                 console.error('❌ fetchProductInsights exception:', err);
             });
         }
-    }, [selectedProduct, dispatch]);
+    }, [selectedProduct, dispatch, tokens]);
 
     const handleProductSelect = (product) => {
         console.log('📦 Product selected:', product);
@@ -81,6 +85,93 @@ const CustomerAnalysisPage = () => {
 
     const formatNumber = (num) => {
         return new Intl.NumberFormat('vi-VN').format(num);
+    };
+
+    // Generate AI suggestions using Gemini
+    const generateAISuggestions = async (analysisData) => {
+        if (!analysisData?.statistics) return;
+        
+        setLoadingAI(true);
+        try {
+            const stats = analysisData.statistics;
+            const aspectStats = stats.aspect_statistics || {};
+            const sentimentDist = stats.sentiment_distribution || {};
+            const keywords = stats.keywords || {};
+            
+            // Build context for AI
+            const topKeywords = Object.entries(keywords)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 5)
+                .map(([word, count]) => `${word} (${count} lần)`);
+            
+            const negativeAspects = Object.entries(aspectStats)
+                .filter(([_, data]) => data.negative > data.positive)
+                .sort((a, b) => b[1].negative - a[1].negative)
+                .slice(0, 3)
+                .map(([aspect, data]) => `${aspect}: ${data.negative} đánh giá tiêu cực`);
+            
+            const positiveAspects = Object.entries(aspectStats)
+                .filter(([_, data]) => data.positive > data.negative)
+                .sort((a, b) => b[1].positive - a[1].positive)
+                .slice(0, 3)
+                .map(([aspect, data]) => `${aspect}: ${data.positive} đánh giá tích cực`);
+            
+            const prompt = `Bạn là chuyên gia phân tích trải nghiệm khách hàng. Dựa trên dữ liệu phân tích đánh giá sản phẩm sau, hãy đưa ra gợi ý cải thiện cụ thể:
+
+📊 Thống kê cảm xúc:
+- Tích cực: ${sentimentDist.positive} đánh giá
+- Trung lập: ${sentimentDist.neutral} đánh giá  
+- Tiêu cực: ${sentimentDist.negative} đánh giá
+
+🔑 Từ khóa nổi bật: ${topKeywords.join(', ')}
+
+⚠️ Khía cạnh tiêu cực:
+${negativeAspects.length > 0 ? negativeAspects.join('\n') : 'Không có vấn đề nghiêm trọng'}
+
+✅ Khía cạnh tích cực:
+${positiveAspects.length > 0 ? positiveAspects.join('\n') : 'Chưa có điểm mạnh rõ ràng'}
+
+Hãy trả lời theo định dạng JSON:
+{
+  "mainIssue": {
+    "aspect": "tên khía cạnh có vấn đề nhất",
+    "description": "mô tả ngắn gọn vấn đề",
+    "suggestion": "gợi ý hành động cụ thể để cải thiện"
+  },
+  "topStrength": {
+    "aspect": "tên khía cạnh tốt nhất",
+    "description": "mô tả ngắn gọn điểm mạnh"
+  },
+  "impacts": [
+    "tác động dự kiến 1",
+    "tác động dự kiến 2",
+    "tác động dự kiến 3"
+  ]
+}
+
+Chỉ trả về JSON, không thêm text khác.`;
+
+            const response = await axios.post('/api/ai/chat', {
+                prompt: prompt,
+                conversationId: `analysis-${selectedProduct.item_id}-${Date.now()}`,
+                userId: 'customer-analysis-system'
+            });
+
+            // Parse JSON response
+            const aiResponse = response.data.reply;
+            // Extract JSON from response (remove markdown code blocks if present)
+            const jsonMatch = aiResponse.match(/```json\s*([\s\S]*?)```/) || aiResponse.match(/\{[\s\S]*\}/);
+            const jsonStr = jsonMatch ? (jsonMatch[1] || jsonMatch[0]) : aiResponse;
+            const suggestions = JSON.parse(jsonStr);
+            
+            setAiSuggestions(suggestions);
+        } catch (error) {
+            console.error('Error generating AI suggestions:', error);
+            // Fallback to default suggestions
+            setAiSuggestions(null);
+        } finally {
+            setLoadingAI(false);
+        }
     };
 
     // Calculate statistics
@@ -107,6 +198,13 @@ const CustomerAnalysisPage = () => {
         });
     }, [selectedProduct, loading, error, sentimentAnalysis, stats, reviews]);
 
+    // Generate AI suggestions when sentiment analysis is ready
+    useEffect(() => {
+        if (sentimentAnalysis && !loading && !loadingAI) {
+            generateAISuggestions(sentimentAnalysis);
+        }
+    }, [sentimentAnalysis, loading]);
+
     // Top keywords data from API
     const topKeywordsArray = Object.entries(keywords)
         .sort((a, b) => b[1] - a[1])
@@ -120,19 +218,19 @@ const CustomerAnalysisPage = () => {
         .map(([aspect, _]) => aspect)
         .slice(0, 2);
 
-    // Get top issues and strengths from recommendations
-    const topIssue = recommendations?.issues?.[0] || {
+    // Get top issues and strengths from AI or fallback to recommendations
+    const topIssue = aiSuggestions?.mainIssue || recommendations?.issues?.[0] || {
         aspect: 'thời gian giao hàng',
         description: 'Khách hàng thường phàn nàn về thời gian giao hàng',
         suggestion: 'Nên hợp tác với đơn vị vận chuyển nhanh hơn hoặc cung cấp nhiều tùy chọn giao hàng'
     };
 
-    const topStrength = recommendations?.strengths?.[0] || {
+    const topStrength = aiSuggestions?.topStrength || recommendations?.strengths?.[0] || {
         aspect: 'bao bì và chất lượng sản phẩm',
         description: 'Khách hàng rất hài lòng về bao bì và chất lượng sản phẩm'
     };
 
-    const impacts = recommendations?.predicted_impact || [
+    const impacts = aiSuggestions?.impacts || recommendations?.predicted_impact || [
         'Tăng 15% đánh giá 5 sao',
         'Giảm 60% phàn nàn giao hàng',
         'Tăng 10% tỷ lệ mua lại'
@@ -330,7 +428,7 @@ const CustomerAnalysisPage = () => {
                 {/* Column 3: AI Suggestions */}
                 <div className="grid-column">
                     <div className="analysis-card">
-                        <h3>🤖 AI Suggestion</h3>
+                        <h3>🤖 AI Suggestion {loadingAI && <span style={{fontSize: '14px', color: '#64748b'}}>(Đang phân tích...)</span>}</h3>
                         
                         {/* Issue Card */}
                         <div className="suggestion-card issue-card">
@@ -339,7 +437,7 @@ const CustomerAnalysisPage = () => {
                                 <h4>Vấn đề phát hiện</h4>
                             </div>
                             <p className="suggestion-text">
-                                Khách hàng thường phàn nàn về <span className="highlight-red">{topIssue.aspect}</span>
+                                {topIssue.description || `Khách hàng thường phàn nàn về `}<span className="highlight-red">{topIssue.aspect}</span>
                             </p>
                             <div className="action-box">
                                 <h5>Gợi ý hành động:</h5>
@@ -354,7 +452,7 @@ const CustomerAnalysisPage = () => {
                                 <h4>Điểm mạnh</h4>
                             </div>
                             <p className="suggestion-text">
-                                Khách hàng rất hài lòng về <span className="highlight-green">{topStrength.aspect}</span>
+                                {topStrength.description || `Khách hàng rất hài lòng về `}<span className="highlight-green">{topStrength.aspect}</span>
                             </p>
                         </div>
 

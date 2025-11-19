@@ -18,9 +18,19 @@ console.log('🔍 ENV loaded (server.js):');
 console.log('  - USE_MOCK_MODE:', JSON.stringify(process.env.USE_MOCK_MODE));
 console.log('  - PORT:', process.env.PORT);
 console.log('  - FRONTEND_URL:', process.env.FRONTEND_URL);
+console.log('  - MONGODB_URI:', process.env.MONGODB_URI ? '✅ Configured' : '❌ Not configured');
+console.log('  - GEMINI_API_KEY:', process.env.GEMINI_API_KEY ? '✅ Configured' : '❌ Not configured');
 
 // Connect DB 
-connectDB();
+let isDBConnected = false;
+connectDB().then(connected => {
+    isDBConnected = connected;
+    if (connected) {
+        console.log('✅ Database ready for AI chatbot');
+    } else {
+        console.warn('⚠️  AI chatbot features may not work without database');
+    }
+});
 
 // Middleware
 app.use(cors({

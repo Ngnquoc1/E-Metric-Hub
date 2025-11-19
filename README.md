@@ -49,8 +49,8 @@ Dashboard phân tích dữ liệu Shopee cho người bán hàng, hỗ trợ **R
 ### 1️⃣ Clone repository
 
 ```bash
-git clone <repository-url>
-cd AISC
+git clone https://github.com/Ngnquoc1/E-Metric-Hub.git
+cd E-Metric-Hub
 ```
 
 ### 2️⃣ Cài đặt dependencies
@@ -67,6 +67,14 @@ cd frontend
 npm install
 ```
 
+#### AI Service (PhoBERT ABSA Model)
+```bash
+cd ai_service
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+```
+
 ### 3️⃣ Cấu hình Environment Variables
 
 #### Backend (.env)
@@ -77,6 +85,7 @@ PORT=5000
 NODE_ENV=development
 USE_MOCK_MODE=true
 FRONTEND_URL=http://localhost:5173
+PYTHON_API_URL=http://localhost:8001
 
 # Shopee API (Không cần thiết trong Mock Mode)
 SHOPEE_PARTNER_ID=your_partner_id
@@ -84,58 +93,127 @@ SHOPEE_PARTNER_KEY=your_partner_key
 SHOPEE_REDIRECT_URL=http://localhost:5173/auth/shopee/callback
 ```
 
-### 4️⃣ Chạy ứng dụng
+#### AI Service (.env)
+Tạo file `ai_service/.env`:
 
-#### Terminal 1 - Backend
+```env
+API_HOST=0.0.0.0
+API_PORT=8001
+USE_CUDA=false
+```
+
+### 4️⃣ Chuẩn bị Model (QUAN TRỌNG)
+
+⚠️ **File model không có trong repository do kích thước lớn (515MB)**
+
+**Cách 1: Sử dụng model đã train sẵn**
+- Liên hệ để nhận file `model.safetensors`
+- Copy vào: `ai_service/absa_phobert_model/model.safetensors`
+
+**Cách 2: Tự train model**
+- Sử dụng notebook: `archive/absa_phobert_1.ipynb`
+- Training data: `archive/train_data.csv`, `archive/val_data.csv`, `archive/test_data.csv`
+
+### 5️⃣ Chạy ứng dụng
+
+#### Terminal 1 - AI Service (PhoBERT API)
+```bash
+cd ai_service
+source venv/bin/activate  # Windows: venv\Scripts\activate
+python api.py
+```
+✅ AI Service chạy tại: `http://localhost:8001`
+
+#### Terminal 2 - Backend (Express API)
 ```bash
 cd backend
 node server.js
 ```
 ✅ Backend chạy tại: `http://localhost:5000`
 
-#### Terminal 2 - Frontend
+#### Terminal 3 - Frontend (React App)
 ```bash
 cd frontend
 npm run dev
 ```
 ✅ Frontend chạy tại: `http://localhost:5173`
 
-### 5️⃣ Mở trình duyệt
+### 6️⃣ Mở trình duyệt
 
 Truy cập: **http://localhost:5173**
+
+---
+
+## 🔍 Kiểm tra các service
+
+```bash
+# Check AI Service
+curl http://localhost:8001/health
+
+# Check Backend
+curl http://localhost:5000/api/health
+
+# Check Frontend
+# Mở http://localhost:5173 trên trình duyệt
+```
 
 ---
 
 ## 📁 Cấu trúc thư mục
 
 ```
-AISC/
+E-Metric-Hub/
+├── ai_service/                    # Python AI Service
+│   ├── api.py                    # FastAPI server
+│   ├── config.py                 # Configuration
+│   ├── model_class.py            # PhoBERT model class
+│   ├── requirements.txt          # Python dependencies
+│   ├── absa_phobert_model/       # Trained model (NOT in git)
+│   │   ├── config.json
+│   │   ├── model.safetensors    # 515MB - Không push lên git
+│   │   ├── tokenizer_config.json
+│   │   └── vocab.txt
+│   └── venv/                     # Python virtual environment
+│
 ├── backend/
-│   ├── server.js                  # Entry point
+│   ├── server.js                 # Entry point
 │   ├── routes/
-│   │   └── auth.js               # OAuth routes
+│   │   ├── auth.js              # OAuth routes
+│   │   ├── shopee.js            # Shopee API routes
+│   │   └── customerAnalysis.js  # Customer analysis routes
 │   ├── services/
-│   │   └── mockShopeeAPI.js      # Mock Shopee API
+│   │   ├── mockShopeeAPI.js     # Mock Shopee API
+│   │   └── mockShopeeAuth.js    # Mock OAuth
 │   └── mockData/
-│       └── shopeeData.js         # Mock data generator (250 orders, 55 products)
+│       └── shopeeData.js        # Mock data (250 orders, 55 products)
 │
 ├── frontend/
 │   ├── src/
 │   │   ├── Components/
-│   │   │   ├── DashboardPage.jsx      # Dashboard chính
-│   │   │   ├── LandingPage.jsx        # Trang chủ
-│   │   │   ├── ShopeeLogin.jsx        # Login component
-│   │   │   └── ShopeeCallback.jsx     # OAuth callback
+│   │   │   ├── DashboardPage.jsx           # Dashboard chính
+│   │   │   ├── CustomerAnalysisPage_new.jsx # Phân tích reviews
+│   │   │   ├── AIAssistantPage.jsx         # AI Assistant
+│   │   │   ├── LandingPage.jsx             # Trang chủ
+│   │   │   ├── ShopeeLogin.jsx             # Login component
+│   │   │   └── ShopeeCallback.jsx          # OAuth callback
 │   │   ├── store/
-│   │   │   ├── store.js               # Redux store
+│   │   │   ├── index.js                    # Redux store
 │   │   │   └── slices/
-│   │   │       ├── authSlice.js       # Auth state
-│   │   │       └── dashboardSlice.js  # Dashboard data
+│   │   │       ├── authSlice.js            # Auth state
+│   │   │       ├── dashboardSlice.js       # Dashboard data
+│   │   │       └── customerAnalysisSlice.js # Analysis data
 │   │   ├── services/
-│   │   │   └── api.js                 # API client
+│   │   │   └── api.js                      # API client
 │   │   └── App.jsx
 │   └── package.json
 │
+├── archive/                       # Training data & notebooks (Optional)
+│   ├── absa_phobert_1.ipynb      # Model training notebook
+│   ├── train_data.csv            # Training dataset
+│   ├── val_data.csv              # Validation dataset
+│   └── test_data.csv             # Test dataset
+│
+├── .gitignore                     # Git ignore (bao gồm *.safetensors)
 └── README.md
 ```
 
@@ -159,21 +237,49 @@ AISC/
   - Tồn kho + Trạng thái (🔥 Hot / ⚠️ Thấp / ✓ Bình thường)
   - Tăng trưởng %
 
-### 2. Đăng nhập Mock OAuth
+### 2. Phân tích Reviews khách hàng (AI-Powered)
+
+#### Tính năng chính:
+- 🤖 **ABSA PhoBERT Model**: Phân tích sentiment theo 8 aspects
+  - Giá cả (Price)
+  - Vận chuyển (Shipping)
+  - Ngoại quan (Outlook)
+  - Chất lượng (Quality)
+  - Kích thước (Size)
+  - Dịch vụ shop (Shop_Service)
+  - Tổng quan (General)
+  - Khác (Others)
+
+#### Giao diện phân tích:
+- 📊 **Sentiment Summary**: Positive/Neutral/Negative distribution
+- 📈 **Aspect Breakdown**: Chi tiết sentiment cho từng aspect
+- 🔑 **Keywords Analysis**: Top keywords từ reviews
+- 💡 **AI Suggestions**: Gợi ý cải thiện dựa trên phân tích
+
+#### Công nghệ:
+- **Model**: PhoBERT-base fine-tuned for Vietnamese ABSA
+- **Backend**: FastAPI (Python 3.8+)
+- **Inference**: Real-time sentiment prediction
+- **Data**: 154 mock reviews per product
+
+### 3. Đăng nhập Mock OAuth
 
 - 🔐 **OAuth 2.0 Flow** (giả lập)
 - ⚡ Auto-redirect & token exchange
 - 💾 LocalStorage persistence
 - 🔄 Auto-refresh on page reload
 
-### 3. State Management (Redux Toolkit)
+### 4. State Management (Redux Toolkit)
 
 - **authSlice**: Quản lý authentication state
 - **dashboardSlice**: Transform & cache dashboard data
+- **customerAnalysisSlice**: Quản lý reviews & sentiment analysis
 - **Async thunks**: 
   - `checkAuth()` - Verify localStorage tokens
   - `exchangeShopeeToken()` - OAuth callback
   - `loadDashboardData()` - Fetch dashboard data
+  - `fetchProductReviews()` - Get product reviews
+  - `fetchProductInsights()` - Get AI sentiment analysis
 
 ---
 
@@ -244,6 +350,96 @@ Response:
 }
 ```
 
+#### Customer Analysis
+```
+GET  /api/customer-analysis/product/:productId/reviews
+     Query: { access_token, shop_id }
+     → Lấy danh sách reviews của sản phẩm
+
+GET  /api/customer-analysis/product/:productId/insights
+     Query: { access_token, shop_id }
+     → Phân tích sentiment với AI (gọi Python API)
+     
+Response:
+{
+  product: { item_id, item_name, ... },
+  total_reviews: 154,
+  analyzed_reviews: 50,
+  sentiment_summary: {
+    positive: 324,
+    neutral: 17,
+    negative: 59
+  },
+  aspect_breakdown: {
+    Price: { positive: 35, neutral: 8, negative: 7 },
+    Shipping: { positive: 30, neutral: 5, negative: 15 },
+    Quality: { positive: 40, neutral: 2, negative: 8 },
+    ...
+  },
+  keywords: { "hàng": 15, "shop": 14, "giao": 13, ... },
+  recommendations: {
+    issues: [...],
+    strengths: [...],
+    summary: "..."
+  }
+}
+```
+
+### AI Service (http://localhost:8001)
+
+#### Health Check
+```
+GET  /health
+     
+Response:
+{
+  status: "healthy",
+  model_loaded: true,
+  tokenizer_loaded: true,
+  device: "cpu"
+}
+```
+
+#### Sentiment Prediction
+```
+POST /predict
+Content-Type: application/json
+
+Body:
+{
+  reviews: ["Review text 1", "Review text 2", ...],
+  product_id: "1001",
+  include_statistics: true
+}
+
+Response:
+{
+  predictions: [
+    {
+      review_text: "Sản phẩm rất tốt, giao hàng nhanh",
+      aspects: [
+        {
+          aspect: "Quality",
+          aspect_display: "Chất lượng",
+          sentiment: -1,  // -1: positive, 0: neutral, 1: negative
+          sentiment_label: "positive",
+          confidence: 0.9234
+        },
+        ...
+      ],
+      overall_sentiment: "positive"
+    },
+    ...
+  ],
+  statistics: {
+    total_reviews: 50,
+    sentiment_distribution: { positive: 324, neutral: 17, negative: 59 },
+    aspect_statistics: { ... },
+    keywords: { ... }
+  }
+}
+```
+
 ---
 ## 📝 Notes
 
@@ -251,16 +447,66 @@ Response:
 - Không cần Shopee Partner ID/Key thật
 - Tất cả data được generate từ `backend/mockData/shopeeData.js`
 - OAuth flow hoàn toàn giả lập
+- 154 mock reviews mỗi sản phẩm với sentiment đa dạng
 
 ### Redux Toolkit
 - State được persist trong localStorage
 - Transform data trước khi lưu vào Redux
 - Auto-retry khi token expired
 
+### AI Model
+- **PhoBERT-base** fine-tuned cho Vietnamese ABSA
+- Model size: **515 MB** (không push lên git)
+- Inference time: ~2-3s cho 50 reviews
+- Hỗ trợ CPU và GPU (CUDA)
+
 ### Production Mode
-- Đổi `USE_MOCK_MODE=false` trong `.env`
+- Đổi `USE_MOCK_MODE=false` trong `backend/.env`
 - Cung cấp `SHOPEE_PARTNER_ID` và `SHOPEE_PARTNER_KEY` thật
 - Implement real Shopee API integration
+- Deploy AI service với GPU để tăng tốc độ
+
+### Large Files (.gitignore)
+```
+*.safetensors          # Model weights (515MB)
+archive/               # Training data & notebooks
+ai_service/venv/       # Python virtual environment
+```
+
+---
+
+## ⚠️ Troubleshooting
+
+### Lỗi: "Model not found"
+```bash
+# Kiểm tra file model có tồn tại
+ls -lh ai_service/absa_phobert_model/model.safetensors
+
+# Nếu không có, yêu cầu file model hoặc tự train
+```
+
+### Lỗi: "Connection refused localhost:8001"
+```bash
+# Kiểm tra AI service có chạy không
+curl http://localhost:8001/health
+
+# Restart AI service
+cd ai_service
+python api.py
+```
+
+### Lỗi: "Module not found"
+```bash
+# Cài đặt lại dependencies
+cd ai_service
+pip install -r requirements.txt
+
+cd backend
+npm install
+
+cd frontend
+npm install
+```
 
 ---
 
