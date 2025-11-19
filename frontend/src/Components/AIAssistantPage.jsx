@@ -152,10 +152,24 @@ const AIAssistantPage = () => {
 
         try {
             // 2. Send request to backend (backend will save to MongoDB)
+            // Attach shop credentials if user is logged in with Shopee
+            const shopeeTokensRaw = localStorage.getItem('shopee_tokens');
+            let shopeePayload = {};
+            if (shopeeTokensRaw) {
+                try {
+                    const tokens = JSON.parse(shopeeTokensRaw);
+                    if (tokens?.shop_id) shopeePayload.shop_id = tokens.shop_id;
+                    if (tokens?.access_token) shopeePayload.access_token = tokens.access_token;
+                } catch (err) {
+                    console.warn('Invalid shopee_tokens in localStorage:', err);
+                }
+            }
+
             const response = await axios.post('/api/ai/chat', {
                 prompt: textToSend,
                 conversationId: activeConvId,
-                userId: userId
+                userId: userId,
+                ...shopeePayload
             });
 
             // Simulate typing delay for better UX
