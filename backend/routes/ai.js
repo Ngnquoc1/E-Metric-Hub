@@ -1,12 +1,11 @@
 import express from 'express';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import Conversation from '../models/Conversation.js';
+import { ragService } from '../services/ragService.js';
 
 const router = express.Router();
 
-
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-
 
 // Test endpoint to check Gemini connection
 router.get('/test', async (req, res) => {
@@ -21,7 +20,7 @@ router.get('/test', async (req, res) => {
     }
 
     try {
-        const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+        const model = genAI.getGenerativeModel({ model: 'models/gemini-2.0-flash-lite' });
         const result = await model.generateContent('Say "Hello, API is working!" in Vietnamese');
         const response = await result.response;
         const text = response.text();
@@ -31,7 +30,7 @@ router.get('/test', async (req, res) => {
             success: true, 
             message: 'Gemini API connection successful',
             testResponse: text,
-            model: 'gemini-pro'
+            model: 'gemini-flash-lite'
         });
     } catch (error) {
         console.error('❌ Gemini API test failed:', error);
@@ -45,7 +44,8 @@ router.get('/test', async (req, res) => {
 });
 
 router.post('/chat', async (req, res) => {
-    const { prompt, conversationId, userId } = req.body;
+    // Expect prompt, conversationId, userId and optionally shop_id / access_token
+    const { prompt, conversationId, userId, shop_id, shopId, access_token } = req.body;
 
     console.log('📨 Received chat request:');
     console.log('  - Prompt:', prompt?.substring(0, 50) + '...');
@@ -68,15 +68,38 @@ router.post('/chat', async (req, res) => {
     }
 
     try {
-        console.log('🚀 Initializing Gemini model: gemini-pro');
-        const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+        const MODEL_NAME = 'models/gemini-2.0-flash-lite';
+        console.log(`🚀 Initializing Gemini model: ${MODEL_NAME}`);
+        const model = genAI.getGenerativeModel({ model: MODEL_NAME });
 
         // BƯỚC 1: Tìm hoặc tạo conversation trong DB
         console.log('🔍 Finding or creating conversation in database...');
         const conv = await Conversation.findOrCreate(conversationId, userId || 'anonymous');
 
-        if (!conv) {
-            throw new Error('Failed to create or find conversation in database');
+        // BƯỚC 1.5: Retrieve relevant context using RAG only when shop information is provided
+        // We require a shop identifier (shop_id or shopId) or access_token to run shop-scoped RAG
+        console.log('🔍 Checking whether RAG should run for this request...');
+        let ragContext = '';
+        const effectiveShopId = shopId || shop_id;
+
+        if (effectiveShopId || access_token) {
+            console.log('🔍 Retrieving relevant context using RAG for shop:', effectiveShopId || '(access_token provided)');
+            try {
+                // If ragService supports shop-scoped retrieval in future, pass user/shop info.
+                // For now, retrieve hybrid context but avoid exposing global data when shop is absent.
+                const retrievedDocs = await ragService.retrieveContext(prompt, 3, effectiveShopId);
+                if (retrievedDocs && retrievedDocs.length > 0) {
+                    ragContext = ragService.formatContextForPrompt(retrievedDocs);
+                    console.log(`✅ Retrieved ${retrievedDocs.length} relevant documents`);
+                } else {
+                    console.log('ℹ️  No relevant context found');
+                }
+            } catch (ragError) {
+                console.error('⚠️  RAG retrieval error:', ragError.message);
+                // Continue without RAG context
+            }
+        } else {
+            console.log('ℹ️  No shop credentials provided — skipping RAG to avoid data leakage');
         }
 
         // BƯỚC 2: Convert messages từ DB sang format Gemini
@@ -84,7 +107,14 @@ router.post('/chat', async (req, res) => {
         const historyForGemini = conv.toGeminiHistory();
         console.log('  - History length:', historyForGemini.length, 'messages');
 
-        // BƯỚC 3: Gọi Gemini API với history
+        // BƯỚC 3: Prepare prompt with RAG context
+        let enhancedPrompt = prompt;
+        if (ragContext) {
+            // Add RAG context to the prompt
+            enhancedPrompt = `${ragContext}\n\nDựa trên thông tin tham khảo ở trên, hãy trả lời câu hỏi sau:\n${prompt}`;
+        }
+
+        // BƯỚC 4: Gọi Gemini API với history
         console.log('💬 Starting chat session with Gemini...');
         const chat = model.startChat({
             history: historyForGemini,
@@ -94,24 +124,25 @@ router.post('/chat', async (req, res) => {
         });
 
         console.log('📤 Sending message to Gemini...');
-        const result = await chat.sendMessage(prompt);
+        const result = await chat.sendMessage(enhancedPrompt);
         const response = await result.response;
         const text = response.text();
 
         console.log('✅ Received response from Gemini');
         console.log('  - Response length:', text.length);
 
-        // BƯỚC 4: Lưu user message và AI response vào DB
+        // BƯỚC 5: Lưu user message và AI response vào DB
         console.log('💾 Saving messages to database...');
         await conv.addMessage('user', prompt);
         await conv.addMessage('ai', text);
         console.log('✅ Messages saved successfully');
 
-        // BƯỚC 5: Trả về response
+        // BƯỚC 6: Trả về response
         res.json({ 
             reply: text,
             conversationId: conv.conversationId,
-            messageCount: conv.messageCount
+            messageCount: conv.messageCount,
+            ragUsed: !!ragContext // Indicate if RAG was used
         });
 
     } catch (error) {
@@ -145,7 +176,8 @@ router.get('/conversations', async (req, res) => {
                 conversationId: conv.conversationId,
                 title: conv.title,
                 messageCount: conv.messageCount,
-                lastUpdated: conv.updatedAt
+                lastUpdated: conv.updatedAt,
+                messages: conv.messages || [] // Đảm bảo frontend luôn có mảng messages
             }))
         });
 
