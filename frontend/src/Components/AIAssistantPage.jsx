@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useSelector } from 'react-redux';
 import { Layout, Input, Button, Spin, Avatar, Typography, Card, Space, message } from 'antd';
 import { SendOutlined, UserOutlined, RobotOutlined, BulbOutlined, ThunderboltOutlined, StarOutlined } from '@ant-design/icons';
 import { v4 as uuidv4 } from 'uuid';
@@ -18,8 +19,9 @@ const AIAssistantPage = () => {
     const [isLoadingConversations, setIsLoadingConversations] = useState(true);
     const messagesEndRef = useRef(null);
     
-    // TODO: Get userId from Redux/Auth context
-    const userId = localStorage.getItem('userId') || 'demo-user';
+    // ✅ Get userId from Redux auth state (consistent with other pages)
+    const { tokens } = useSelector((state) => state.auth);
+    const userId = tokens?.shop_id || 'demo-user';
 
     const activeConversation = conversations.find(c => c.conversationId === activeConvId);
 
@@ -44,7 +46,8 @@ const AIAssistantPage = () => {
                 setConversations(apiConversations);
                 
                 if (apiConversations.length > 0) {
-                    setActiveConvId(apiConversations[0].conversationId);
+                    // Load messages for the first conversation
+                    await handleSelectConversation(apiConversations[0].conversationId);
                 } else {
                     // Create first conversation automatically
                     handleNewChat();
@@ -79,8 +82,51 @@ const AIAssistantPage = () => {
         setActiveConvId(newId);
     };
 
-    const handleSelectConversation = (id) => {
+    const handleSelectConversation = async (id) => {
         setActiveConvId(id);
+        
+        // Load conversation messages from backend
+        try {
+            const response = await axios.get(`/api/ai/conversations/${id}`);
+            const loadedConv = response.data.conversation;
+            
+            // Update the conversation with loaded messages
+            setConversations(prevConvs =>
+                prevConvs.map(conv =>
+                    conv.conversationId === id
+                        ? { ...conv, messages: loadedConv.messages }
+                        : conv
+                )
+            );
+        } catch (error) {
+            console.error('Error loading conversation:', error);
+            message.error('Không thể tải tin nhắn. Vui lòng thử lại.');
+        }
+    };
+
+    const handleDeleteConversation = async (id) => {
+        try {
+            // Call backend API to delete conversation
+            await axios.delete(`/api/ai/conversations/${id}`);
+            
+            // Remove from local state
+            setConversations(prevConvs => prevConvs.filter(conv => conv.conversationId !== id));
+            
+            // If deleted conversation was active, switch to first remaining or create new
+            if (id === activeConvId) {
+                const remaining = conversations.filter(conv => conv.conversationId !== id);
+                if (remaining.length > 0) {
+                    await handleSelectConversation(remaining[0].conversationId);
+                } else {
+                    handleNewChat();
+                }
+            }
+            
+            message.success('Đã xóa cuộc trò chuyện');
+        } catch (error) {
+            console.error('Error deleting conversation:', error);
+            message.error('Không thể xóa cuộc trò chuyện. Vui lòng thử lại.');
+        }
     };
 
     const handleSendMessage = async (messageText) => {
@@ -164,6 +210,7 @@ const AIAssistantPage = () => {
                     activeConvId={activeConvId}
                     onSelect={handleSelectConversation}
                     onNewChat={handleNewChat}
+                    onDelete={handleDeleteConversation}
                 />
             </Sider>
             <Layout className="chat-layout">

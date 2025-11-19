@@ -21,7 +21,7 @@ router.get('/test', async (req, res) => {
     }
 
     try {
-        const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-lite' });
         const result = await model.generateContent('Say "Hello, API is working!" in Vietnamese');
         const response = await result.response;
         const text = response.text();
@@ -31,7 +31,7 @@ router.get('/test', async (req, res) => {
             success: true, 
             message: 'Gemini API connection successful',
             testResponse: text,
-            model: 'gemini-pro'
+            model: 'gemini-2.0-flash-lite'
         });
     } catch (error) {
         console.error('❌ Gemini API test failed:', error);
@@ -68,8 +68,8 @@ router.post('/chat', async (req, res) => {
     }
 
     try {
-        console.log('🚀 Initializing Gemini model: gemini-pro');
-        const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+        console.log('🚀 Initializing Gemini model: gemini-2.0-flash-lite');
+        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-lite' });
 
         // BƯỚC 1: Tìm hoặc tạo conversation trong DB
         console.log('🔍 Finding or creating conversation in database...');
