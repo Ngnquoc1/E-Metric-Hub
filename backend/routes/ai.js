@@ -21,7 +21,7 @@ router.get('/test', async (req, res) => {
     }
 
     try {
-        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+        const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
         const result = await model.generateContent('Say "Hello, API is working!" in Vietnamese');
         const response = await result.response;
         const text = response.text();
@@ -31,7 +31,7 @@ router.get('/test', async (req, res) => {
             success: true, 
             message: 'Gemini API connection successful',
             testResponse: text,
-            model: 'gemini-2.0-flash-exp'
+            model: 'gemini-pro'
         });
     } catch (error) {
         console.error('❌ Gemini API test failed:', error);
@@ -52,12 +52,13 @@ router.post('/chat', async (req, res) => {
     console.log('  - Conversation ID:', conversationId);
     console.log('  - User ID:', userId || 'anonymous');
 
-    if (!prompt) {
-        return res.status(400).json({ error: 'Prompt is required' });
+    // Validation
+    if (!prompt || typeof prompt !== 'string' || prompt.trim().length === 0) {
+        return res.status(400).json({ error: 'Prompt is required and must be a non-empty string' });
     }
 
-    if (!conversationId) {
-        return res.status(400).json({ error: 'conversationId is required' });
+    if (!conversationId || typeof conversationId !== 'string') {
+        return res.status(400).json({ error: 'conversationId is required and must be a string' });
     }
 
     if (!process.env.GEMINI_API_KEY) {
@@ -67,12 +68,16 @@ router.post('/chat', async (req, res) => {
     }
 
     try {
-        console.log('🚀 Initializing Gemini model: gemini-2.0-flash-exp');
-        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+        console.log('🚀 Initializing Gemini model: gemini-pro');
+        const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
 
         // BƯỚC 1: Tìm hoặc tạo conversation trong DB
-        console.log(' Finding or creating conversation in database...');
+        console.log('🔍 Finding or creating conversation in database...');
         const conv = await Conversation.findOrCreate(conversationId, userId || 'anonymous');
+
+        if (!conv) {
+            throw new Error('Failed to create or find conversation in database');
+        }
 
         // BƯỚC 2: Convert messages từ DB sang format Gemini
         console.log('🔄 Converting conversation history to Gemini format...');
@@ -130,16 +135,14 @@ router.get('/conversations', async (req, res) => {
     console.log('📋 Fetching conversations for user:', userId || 'anonymous');
 
     try {
-        const conversations = await Conversation.findByUserId(userId || 'anonymous')
-            .sort({ updatedAt: -1 }) // Sắp xếp theo thời gian update mới nhất
-            .select('conversationId title messageCount updatedAt') // Chỉ lấy các field cần thiết
-            .limit(50); // Giới hạn 50 conversations gần nhất
+        // findByUserId đã có .sort() và .limit() trong static method
+        const conversations = await Conversation.findByUserId(userId || 'anonymous', 50);
 
         console.log('✅ Found', conversations.length, 'conversations');
 
         res.json({ 
             conversations: conversations.map(conv => ({
-                id: conv.conversationId,
+                conversationId: conv.conversationId,
                 title: conv.title,
                 messageCount: conv.messageCount,
                 lastUpdated: conv.updatedAt
@@ -175,7 +178,7 @@ router.get('/conversations/:id', async (req, res) => {
 
         res.json({ 
             conversation: {
-                id: conversation.conversationId,
+                conversationId: conversation.conversationId,
                 title: conversation.title,
                 messages: conversation.messages.map(msg => ({
                     sender: msg.sender,
