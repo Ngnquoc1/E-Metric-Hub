@@ -1,12 +1,26 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { api } from '../../services/api';
 
-// Async thunk for loading dashboard data
+// Async thunk for loading dashboard data (WITH CACHE)
 export const loadDashboardData = createAsyncThunk(
     'dashboard/loadData',
-    async ({ accessToken, shopId }, { rejectWithValue }) => {
+    async ({ accessToken, shopId, forceRefresh = false }, { getState, rejectWithValue }) => {
         try {
-            console.log('📊 [Redux] Loading dashboard data...');
+            const { dashboard } = getState();
+            const now = Date.now();
+            
+            // Check cache (5 minutes)
+            if (!forceRefresh && dashboard.data && dashboard.lastFetch) {
+                const elapsed = now - dashboard.lastFetch;
+                const CACHE_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+                
+                if (elapsed < CACHE_TIMEOUT) {
+                    console.log('📦 [Redux] Using cached data (age:', Math.floor(elapsed / 1000), 'seconds)');
+                    return dashboard.data;
+                }
+            }
+            
+            console.log('📊 [Redux] Loading fresh dashboard data...');
             const response = await api.getDashboardData(accessToken, shopId);
             console.log('✅ [Redux] Dashboard data loaded:', response);
             return response;
@@ -171,12 +185,14 @@ const dashboardSlice = createSlice({
         transformedData: null,
         loading: false,
         error: null,
+        lastFetch: null,  // Track when data was last fetched
     },
     reducers: {
         clearDashboardData: (state) => {
             state.data = null;
             state.transformedData = null;
             state.error = null;
+            state.lastFetch = null;
         },
     },
     extraReducers: (builder) => {
@@ -189,6 +205,7 @@ const dashboardSlice = createSlice({
                 state.loading = false;
                 state.data = action.payload;
                 state.transformedData = transformShopeeData(action.payload);
+                state.lastFetch = Date.now();  // Store fetch timestamp
             })
             .addCase(loadDashboardData.rejected, (state, action) => {
                 state.loading = false;

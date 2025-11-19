@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Tabs, Card, Row, Col, Statistic, Table, Tag, message, Spin, Button, Empty } from 'antd';
+import { Tabs, Card, Row, Col, Statistic, Table, Tag, message, Spin, Button, Empty, Skeleton } from 'antd';
 import {
     ArrowUpOutlined,
     ArrowDownOutlined,
@@ -75,7 +75,8 @@ const DashboardPage = () => {
         if (tokens) {
             dispatch(loadDashboardData({
                 accessToken: tokens.access_token,
-                shopId: tokens.shop_id
+                shopId: tokens.shop_id,
+                forceRefresh: true  // Force bypass cache
             }))
                 .unwrap()
                 .then(() => {
@@ -101,6 +102,18 @@ const DashboardPage = () => {
         dispatch(clearDashboardData());
         message.info('Đã đăng xuất');
     };
+
+    // OPTIMIZED: Memoize chart data to prevent unnecessary re-calculations
+    const chartData = useMemo(() => {
+        if (!shopeeData) return null;
+        
+        return {
+            revenue: shopeeData.revenueData || [],
+            topProducts: shopeeData.topProducts || [],
+            orderStatus: shopeeData.orderStatusData || [],
+            categories: shopeeData.categoryData || []
+        };
+    }, [shopeeData]);
 
     // Show loading spinner while checking auth
     if (authLoading && !isAuthenticated) {
@@ -136,11 +149,33 @@ const DashboardPage = () => {
         );
     }
 
-    // Show loading spinner
+    // OPTIMIZED: Show loading skeleton instead of spinner
     if (loading) {
         return (
-            <div className="dashboard-loading">
-                <Spin size="large" tip="Đang tải dữ liệu Dashboard..." />
+            <div className="dashboard-page">
+                <div className="dashboard-header">
+                    <Skeleton.Input active style={{ width: 300, height: 40 }} />
+                    <Skeleton.Button active />
+                </div>
+                <Row gutter={[16, 16]} style={{ marginTop: 24 }}>
+                    <Col xs={24} sm={12} lg={6}>
+                        <Card><Skeleton active paragraph={{ rows: 2 }} /></Card>
+                    </Col>
+                    <Col xs={24} sm={12} lg={6}>
+                        <Card><Skeleton active paragraph={{ rows: 2 }} /></Card>
+                    </Col>
+                    <Col xs={24} sm={12} lg={6}>
+                        <Card><Skeleton active paragraph={{ rows: 2 }} /></Card>
+                    </Col>
+                    <Col xs={24} sm={12} lg={6}>
+                        <Card><Skeleton active paragraph={{ rows: 2 }} /></Card>
+                    </Col>
+                </Row>
+                <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+                    <Col span={24}>
+                        <Card><Skeleton active paragraph={{ rows: 4 }} /></Card>
+                    </Col>
+                </Row>
             </div>
         );
     }
@@ -257,8 +292,10 @@ const DashboardPage = () => {
             </div>
 
             <Tabs activeKey={activeTab} onChange={setActiveTab} size="large" className="dashboard-tabs">
-                {/* Tab 1: Tổng quan */}
+                {/* Tab 1: Tổng quan - LAZY LOADED */}
                 <TabPane tab="📊 Tổng quan" key="1">
+                    {activeTab === '1' && (
+                        <React.Fragment>
                     {/* KPI Cards with Real Data */}
                     <Row gutter={[16, 16]} className="kpi-row">
                         <Col xs={24} sm={12} lg={6}>
@@ -412,10 +449,14 @@ const DashboardPage = () => {
                             </Card>
                         </Col>
                     </Row>
+                        </React.Fragment>
+                    )}
                 </TabPane>
 
-                {/* Tab 2: Sản phẩm */}
+                {/* Tab 2: Sản phẩm - LAZY LOADED */}
                 <TabPane tab="📦 Sản phẩm" key="2">
+                    {activeTab === '2' && (
+                        <React.Fragment>
                     {/* Product KPIs */}
                     <Row gutter={[16, 16]} className="kpi-row">
                         <Col xs={24} sm={12} lg={6}>
@@ -484,6 +525,8 @@ const DashboardPage = () => {
                             </Card>
                         </Col>
                     </Row>
+                        </React.Fragment>
+                    )}
                 </TabPane>
             </Tabs>
         </div>

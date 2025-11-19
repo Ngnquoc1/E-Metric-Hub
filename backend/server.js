@@ -6,6 +6,7 @@ import cors from 'cors';
 import authRoutes from './routes/auth.js';
 import shopeeRoutes from './routes/shopee.js';
 import aiRoutes from './routes/ai.js';
+import customerAnalysisRoutes from './routes/customerAnalysis.js';
 import { connectDB } from './config/database.js';
 
 const app = express();
@@ -43,7 +44,8 @@ app.get('/', (req, res) => {
         endpoints: {
             auth: '/api/auth',
             shopee: '/api/shopee',
-            ai: '/api/ai'
+            ai: '/api/ai',
+            customerAnalysis: '/api/customer-analysis'
         }
     });
 });
@@ -51,6 +53,7 @@ app.get('/', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/shopee', shopeeRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/customer-analysis', customerAnalysisRoutes);
 
 // Error handling
 app.use((err, req, res, next) => {

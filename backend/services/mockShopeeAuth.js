@@ -34,8 +34,8 @@ class MockShopeeAuthService {
     async exchangeToken(authCode, shopId) {
         console.log('🔄 Exchanging auth code for access token...');
         
-        // Simulate API call delay
-        await this.simulateDelay(1000);
+        // Simulate API call delay (reduced for demo)
+        await this.simulateDelay(300);  // 1000ms → 300ms
         
         // Generate mock tokens
         const accessToken = this.generateMockAccessToken();
@@ -75,7 +75,7 @@ class MockShopeeAuthService {
     async refreshAccessToken(shopId, refreshToken) {
         console.log('🔄 Refreshing access token...');
         
-        await this.simulateDelay(800);
+        await this.simulateDelay(200);  // 800ms → 200ms
         
         const storedTokens = this.tokens.get(shopId);
         if (!storedTokens || storedTokens.refresh_token !== refreshToken) {

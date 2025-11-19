@@ -288,3 +288,21 @@ export {
     MOCK_PRODUCTS,
     CATEGORIES
 };
+
+// ============================================
+// OPTIMIZED: Pre-generate indexes for fast lookup
+// ============================================
+export const ORDER_MAP = new Map(
+    MOCK_ORDERS.map(order => [order.order_sn, order])
+);
+
+export const PRODUCT_MAP = new Map(
+    MOCK_PRODUCTS.map(product => [product.item_id, product])
+);
+
+console.log('✅ Mock data loaded:', {
+    orders: MOCK_ORDERS.length,
+    products: MOCK_PRODUCTS.length,
+    orderMapSize: ORDER_MAP.size,
+    productMapSize: PRODUCT_MAP.size
+});

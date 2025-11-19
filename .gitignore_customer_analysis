@@ -1,0 +1,30 @@
+# Customer Analysis - Additional .gitignore
+
+# Python
+ai_service/venv/
+ai_service/__pycache__/
+ai_service/*.pyc
+ai_service/*.pyo
+ai_service/*.log
+
+# Logs
+logs/*.log
+logs/*.txt
+
+# Service PIDs
+.service_pids
+
+# Model files (too large for git)
+archive/absa_phobert_model/*.bin
+archive/absa_phobert_model/*.safetensors
+
+# Keep model config and tokenizer
+!archive/absa_phobert_model/config.json
+!archive/absa_phobert_model/tokenizer_config.json
+!archive/absa_phobert_model/vocab.txt
+!archive/absa_phobert_model/special_tokens_map.json
+!archive/absa_phobert_model/bpe.codes
+
+# Environment
+ai_service/.env
+ai_service/.env.local
