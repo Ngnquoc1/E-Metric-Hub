@@ -6,7 +6,7 @@ import {
     setSelectedProduct,
     clearAnalysis
 } from '../store/slices/customerAnalysisSlice';
-import './CustomerAnalysisPage_new.css';
+import './CustomerAnalysisPage.css';
 
 const CustomerAnalysisPage = () => {
     const dispatch = useDispatch();

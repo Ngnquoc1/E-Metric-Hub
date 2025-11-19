@@ -7,6 +7,7 @@ import authRoutes from './routes/auth.js';
 import shopeeRoutes from './routes/shopee.js';
 import aiRoutes from './routes/ai.js';
 import customerAnalysisRoutes from './routes/customerAnalysis.js';
+import demandForecastRoutes from './routes/DemandForecast.js';
 import { connectDB } from './config/database.js';
 
 const app = express();
@@ -45,7 +46,8 @@ app.get('/', (req, res) => {
             auth: '/api/auth',
             shopee: '/api/shopee',
             ai: '/api/ai',
-            customerAnalysis: '/api/customer-analysis'
+            customerAnalysis: '/api/customer-analysis',
+            demandForecast: '/api/demand-forecast'
         }
     });
 });
@@ -54,6 +56,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/shopee', shopeeRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/customer-analysis', customerAnalysisRoutes);
+app.use('/api/demand-forecast', demandForecastRoutes);
 
 // Error handling
 app.use((err, req, res, next) => {

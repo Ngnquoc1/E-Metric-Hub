@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import CustomerAnalysisPage from './CustomerAnalysisPage_new';
+import CustomerAnalysisPage from './CustomerAnalysisPage';
+import DemandForecastPage from './DemandForecastPage';
+import DynamicPricingPage from './DynamicPricingPage';
 import './FeaturesPage.css';
 import upwardTrendIcon from '../assets/img/upward-trend.png';
 import dollarIcon from '../assets/img/dollar-sign.png';
@@ -40,7 +42,10 @@ const FeaturesPage = () => {
         switch (activeFeature) {
             case 'customer-analysis':
                 return <CustomerAnalysisPage embedded={true} />;
-            
+            case 'demand-forecast':
+                return <DemandForecastPage embedded={true} />;
+            case 'dynamic-pricing':
+                return <DynamicPricingPage embedded={true} />;
             default:
                 const feature = features.find(f => f.id === activeFeature);
                 return (

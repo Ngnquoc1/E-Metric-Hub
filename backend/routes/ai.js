@@ -196,6 +196,65 @@ router.get('/conversations/:id', async (req, res) => {
         });
     }
 });
+//Post /simple-prompt - Lấy dự đoán cho từng sản phẩm
+router.post('/simple-prompt', async (req, res) => {
+    // Chỉ lấy prompt từ body request
+    const { prompt } = req.body;
+
+    console.log('📨 Received simple prompt request:');
+    console.log('  - Prompt:', prompt?.substring(0, 50) + '...');
+
+    // --- 1. Kiểm tra đầu vào ---
+    if (!prompt) {
+        return res.status(400).json({ error: 'Prompt is required' });
+    }
+
+    if (!process.env.GEMINI_API_KEY) {
+        return res.status(500).json({ 
+            error: 'GEMINI_API_KEY is not configured on the server.' 
+        });
+    }
+
+    try {
+        // --- 2. Khởi tạo và Cấu hình Model ---
+        console.log('🚀 Initializing Gemini model: gemini-2.0-flash-exp');
+        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+
+        // Cấu hình chỉ số output (Tùy chọn)
+        const generationConfig = {
+            maxOutputTokens: 2000, // Tăng lên 2000 token cho các phản hồi dài hơn
+        };
+
+        // --- 3. Gọi Gemini API ---
+        console.log('📤 Sending message to Gemini...');
+        // Sử dụng model.generateContent thay vì model.startChat
+        // vì ta không cần quản lý lịch sử (history)
+        const result = await model.generateContent({
+            contents: [{ role: 'user', parts: [{ text: prompt }] }],
+            config: generationConfig
+        });
+
+        const response = await result.response;
+        const text = response.text();
+
+        console.log('✅ Received response from Gemini');
+        console.log('  - Response length:', text.length);
+
+        // --- 4. Trả về response ---
+        res.json({ 
+            reply: text,
+        });
+
+    } catch (error) {
+        console.error('❌ Error in simple-prompt endpoint:');
+        console.error('  - Error message:', error.message);
+        
+        res.status(500).json({ 
+            error: 'Failed to get response from AI',
+            details: error.message 
+        });
+    }
+});
 
 // DELETE /conversations/:id - Xóa một conversation
 router.delete('/conversations/:id', async (req, res) => {
