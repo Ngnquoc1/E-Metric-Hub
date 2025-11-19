@@ -6,7 +6,7 @@ from pathlib import Path
 
 # Project paths
 BASE_DIR = Path(__file__).parent
-MODEL_DIR = BASE_DIR.parent / 'archive' / 'absa_phobert_model'
+MODEL_DIR = BASE_DIR / 'absa_phobert_model'
 
 # Model configuration
 MODEL_NAME = 'vinai/phobert-base'
