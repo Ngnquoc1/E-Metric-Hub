@@ -162,13 +162,22 @@ router.post('/chat', async (req, res) => {
 router.get('/conversations', async (req, res) => {
     const { userId } = req.query;
 
-    console.log('📋 Fetching conversations for user:', userId || 'anonymous');
-
+    console.log('🔍 === BACKEND CONVERSATIONS DEBUG ===');
+    console.log('  - Received userId from query:', userId || 'anonymous');
+    
     try {
+        // 🔍 DEBUG: Check all userIds in database
+        const allConversations = await Conversation.find({}).select('userId conversationId title').limit(20);
+        const uniqueUserIds = [...new Set(allConversations.map(c => c.userId))];
+        console.log('  - All userIds in DB:', uniqueUserIds);
+        console.log('  - Total conversations in DB:', allConversations.length);
+        console.log('  - Searching for userId:', userId || 'anonymous');
+        console.log('===================================');
+        
         // findByUserId đã có .sort() và .limit() trong static method
         const conversations = await Conversation.findByUserId(userId || 'anonymous', 50);
 
-        console.log('✅ Found', conversations.length, 'conversations');
+        console.log('✅ Found', conversations.length, 'conversations for userId:', userId);
 
         res.json({ 
             conversations: conversations.map(conv => ({
