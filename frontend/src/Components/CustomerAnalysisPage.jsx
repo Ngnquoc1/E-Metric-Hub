@@ -271,7 +271,8 @@ Chỉ trả về JSON, không thêm text khác.`;
                 </div>
             </div>
 
-            {/* Controls Row */}
+            {/* Controls Row - Only show when logged in */}
+            {tokens?.access_token && (
             <div className="controls-row">
                 <div className="product-selector-new">
                     <label>Chọn sản phẩm</label>
@@ -316,6 +317,7 @@ Chỉ trả về JSON, không thêm text khác.`;
                     </div>
                 </div>
             </div>
+            )}
 
             {/* Main Grid Layout */}
             {loading && (
@@ -332,11 +334,48 @@ Chỉ trả về JSON, không thêm text khác.`;
                 </div>
             )}
 
-            {!loading && !selectedProduct && (
+            {/* Not Logged In State */}
+            {!tokens?.access_token && !loading && (
                 <div className="empty-state">
-                    <div className="empty-icon">📊</div>
-                    <h3>Chọn sản phẩm để bắt đầu phân tích</h3>
-                    <p>Vui lòng chọn một sản phẩm từ danh sách để xem phân tích chi tiết về đánh giá khách hàng</p>
+                    <div className="empty-icon">🔒</div>
+                    <h3>Vui lòng đăng nhập để sử dụng tính năng này</h3>
+                    <p>Bạn cần đăng nhập vào tài khoản Shopee để xem phân tích đánh giá khách hàng và insights từ AI</p>
+                    <button 
+                        onClick={() => window.location.href = '/'}
+                        style={{
+                            background: '#0a58d0',
+                            color: 'white',
+                            padding: '12px 32px',
+                            border: 'none',
+                            borderRadius: '8px',
+                            fontSize: '14px',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            marginTop: '16px'
+                        }}
+                    >
+                        Đăng nhập ngay
+                    </button>
+                </div>
+            )}
+
+            {!loading && !selectedProduct && tokens?.access_token && (
+                <div style={{
+                    background: 'linear-gradient(135deg, #0a58d0 0%, #0284c7 100%)',
+                    borderRadius: '12px',
+                    padding: '32px',
+                    textAlign: 'center',
+                    color: 'white',
+                    boxShadow: '0 4px 12px rgba(10, 88, 208, 0.3)',
+                    marginTop: '20px'
+                }}>
+                    <div style={{ fontSize: '48px', marginBottom: '16px' }}>💬</div>
+                    <h3 style={{ fontSize: '18px', fontWeight: '600', margin: '0 0 8px 0' }}>
+                        Chọn sản phẩm để bắt đầu phân tích đánh giá
+                    </h3>
+                    <p style={{ fontSize: '14px', opacity: 0.9, lineHeight: '1.6', maxWidth: '500px', margin: '0 auto' }}>
+                        Hệ thống sẽ phân tích cảm xúc khách hàng và đưa ra insights chi tiết cho sản phẩm bạn chọn
+                    </p>
                 </div>
             )}
 
@@ -349,145 +388,239 @@ Chỉ trả về JSON, không thêm text khác.`;
             )}
 
             {!loading && selectedProduct && sentimentAnalysis && (
-                <div className="main-grid">
-                {/* Column 1: Sentiment Analysis */}
+                <div className="main-grid" style={{ display: 'grid', gridTemplateColumns: '320px 1fr 300px', gap: '20px', maxWidth: '1400px', margin: '0 auto' }}>
+                {/* Column 1: Aspect Analysis - Clean Blue */}
                 <div className="grid-column">
-                    <div className="analysis-card">
-                        <h3>📊 Phân tích cảm xúc</h3>
-                        <div className="donut-chart-container">
-                            <svg viewBox="0 0 200 200" width="240" height="240">
-                                {/* Positive */}
-                                <path d={calculateDonutPath(0, positivePercent)} fill="#10b981" />
-                                {/* Neutral */}
-                                <path d={calculateDonutPath(positivePercent, neutralPercent)} fill="#f59e0b" />
-                                {/* Negative */}
-                                <path d={calculateDonutPath(parseFloat(positivePercent) + parseFloat(neutralPercent), negativePercent)} fill="#ef4444" />
+                    <div style={{ background: 'white', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', border: '1px solid #e5e7eb' }}>
+                        <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '20px', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ color: '#0a58d0' }}>📊</span> Phân tích theo tiêu chí
+                        </h3>
+                        <div className="aspect-analysis">
+                            {Object.entries(aspectStats)
+                                .filter(([_, data]) => (data.positive + data.neutral + data.negative) > 0)
+                                .map(([aspect, data]) => {
+                                const total = data.positive + data.neutral + data.negative;
+                                const positiveP = (data.positive / total * 100).toFixed(0);
+                                const neutralP = (data.neutral / total * 100).toFixed(0);
+                                const negativeP = (data.negative / total * 100).toFixed(0);
                                 
-                                {/* Center text */}
-                                <text x="100" y="95" textAnchor="middle" className="donut-label">Tích cực</text>
-                                <text x="100" y="115" textAnchor="middle" className="donut-value">{positivePercent}%</text>
-                            </svg>
-                        </div>
-                        <div className="sentiment-breakdown">
-                            <div className="breakdown-item">
-                                <div className="breakdown-dot positive-dot"></div>
-                                <span className="breakdown-label">Tích cực</span>
-                                <span className="breakdown-value">{sentimentDist.positive}</span>
-                            </div>
-                            <div className="breakdown-item">
-                                <div className="breakdown-dot neutral-dot"></div>
-                                <span className="breakdown-label">Trung lập</span>
-                                <span className="breakdown-value">{sentimentDist.neutral}</span>
-                            </div>
-                            <div className="breakdown-item">
-                                <div className="breakdown-dot negative-dot"></div>
-                                <span className="breakdown-label">Tiêu cực</span>
-                                <span className="breakdown-value">{sentimentDist.negative}</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Column 2: Top Keywords */}
-                <div className="grid-column">
-                    <div className="analysis-card">
-                        <h3>💬 Từ khóa nổi bật</h3>
-                        <div className="bar-chart">
-                            {topKeywordsArray.length > 0 ? topKeywordsArray.filter(k => k.count > 0).map((keyword, idx) => {
-                                const maxCount = Math.max(...topKeywordsArray.map(k => k.count));
+                                const aspectNames = {
+                                    'Price': 'Giá cả',
+                                    'Shipping': 'Vận chuyển',
+                                    'Outlook': 'Ngoại quan',
+                                    'Quality': 'Chất lượng',
+                                    'Size': 'Kích thước',
+                                    'Shop_Service': 'Dịch vụ',
+                                    'General': 'Tổng quan',
+                                    'Others': 'Khác'
+                                };
+                                
                                 return (
-                                    <div key={idx} className="bar-item">
-                                        <div className="bar-label">{keyword.name}</div>
-                                        <div className="bar-container">
-                                            <div 
-                                                className="bar-fill" 
-                                                style={{ width: `${(keyword.count / maxCount) * 100}%` }}
-                                            ></div>
+                                    <div key={aspect} style={{ marginBottom: '16px' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                                            <span style={{ fontSize: '13px', fontWeight: '500', color: '#334155' }}>{aspectNames[aspect]}</span>
+                                            <span style={{ fontSize: '12px', color: '#64748b' }}>{total}</span>
                                         </div>
-                                        <div className="bar-count">{keyword.count}</div>
+                                        <div style={{ display: 'flex', height: '6px', borderRadius: '3px', overflow: 'hidden', background: '#f1f5f9' }}>
+                                            {parseFloat(positiveP) > 0 && (
+                                                <div style={{ width: `${positiveP}%`, background: '#10b981', transition: 'width 0.5s ease' }}></div>
+                                            )}
+                                            {parseFloat(neutralP) > 0 && (
+                                                <div style={{ width: `${neutralP}%`, background: '#f59e0b', transition: 'width 0.5s ease' }}></div>
+                                            )}
+                                            {parseFloat(negativeP) > 0 && (
+                                                <div style={{ width: `${negativeP}%`, background: '#ef4444', transition: 'width 0.5s ease' }}></div>
+                                            )}
+                                        </div>
+                                        <div style={{ display: 'flex', gap: '12px', marginTop: '4px', fontSize: '11px', color: '#64748b' }}>
+                                            <span>{positiveP}% tốt</span>
+                                            <span>{neutralP}% TB</span>
+                                            <span>{negativeP}% kém</span>
+                                        </div>
                                     </div>
                                 );
-                            }) : (
-                                <p style={{ textAlign: 'center', color: '#64748b' }}>Chưa có dữ liệu</p>
-                            )}
+                            })}
                         </div>
-                        <div className="keyword-section">
-                            <h4>Từ khóa phổ biến:</h4>
-                            <div className="keyword-tags">
-                                {positiveKeywords.map((keyword, idx) => (
-                                    <span key={idx} className="keyword-tag positive-tag">{keyword.name}</span>
-                                ))}
-                                {negativeKeywords.map((keyword, idx) => (
-                                    <span key={idx} className="keyword-tag negative-tag">{keyword}</span>
-                                ))}
+                        
+                        {/* Summary */}
+                        <div style={{ marginTop: '20px', padding: '16px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                            <div style={{ fontSize: '13px', fontWeight: '600', marginBottom: '12px', color: '#334155' }}>Tổng quan</div>
+                            <div style={{ display: 'flex', gap: '12px' }}>
+                                <div style={{ flex: 1, textAlign: 'center' }}>
+                                    <div style={{ fontSize: '20px', fontWeight: '700', color: '#10b981', marginBottom: '2px' }}>{positivePercent}%</div>
+                                    <div style={{ fontSize: '11px', color: '#64748b' }}>Tích cực</div>
+                                </div>
+                                <div style={{ flex: 1, textAlign: 'center' }}>
+                                    <div style={{ fontSize: '20px', fontWeight: '700', color: '#f59e0b', marginBottom: '2px' }}>{neutralPercent}%</div>
+                                    <div style={{ fontSize: '11px', color: '#64748b' }}>Trung lập</div>
+                                </div>
+                                <div style={{ flex: 1, textAlign: 'center' }}>
+                                    <div style={{ fontSize: '20px', fontWeight: '700', color: '#ef4444', marginBottom: '2px' }}>{negativePercent}%</div>
+                                    <div style={{ fontSize: '11px', color: '#64748b' }}>Tiêu cực</div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Column 3: AI Suggestions */}
-                <div className="grid-column">
-                    <div className="analysis-card">
-                        <h3>🤖 AI Suggestion {loadingAI && <span style={{fontSize: '14px', color: '#64748b'}}>(Đang phân tích...)</span>}</h3>
-                        
-                        {/* Issue Card */}
-                        <div className="suggestion-card issue-card">
-                            <div className="suggestion-header">
-                                <span className="suggestion-icon">⚠️</span>
-                                <h4>Vấn đề phát hiện</h4>
-                            </div>
-                            <p className="suggestion-text">
-                                {topIssue.description || `Khách hàng thường phàn nàn về `}<span className="highlight-red">{topIssue.aspect}</span>
-                            </p>
-                            <div className="action-box">
-                                <h5>Gợi ý hành động:</h5>
-                                <p>{topIssue.suggestion}</p>
+                {/* Column 2: AI Insights - Minimalist */}
+                <div className="grid-column" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                        <span style={{ fontSize: '18px', fontWeight: '600', color: '#1e293b' }}>AI Insights</span>
+                        {loadingAI && <span style={{ fontSize: '12px', color: '#94a3b8' }}>(Đang phân tích...)</span>}
+                    </div>
+                    
+                    {/* Main Issue */}
+                    <div style={{ background: 'white', borderRadius: '12px', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', border: '1px solid #e5e7eb', borderLeft: '4px solid #0a58d0' }}>
+                        <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '10px', color: '#0a58d0' }}>Vấn đề cần xử lý</div>
+                        <p style={{ fontSize: '13px', lineHeight: '1.6', marginBottom: '12px', color: '#475569' }}>
+                            {topIssue.description || 'Khách hàng phàn nàn về'} <strong style={{ color: '#1e293b' }}>{topIssue.aspect}</strong>
+                        </p>
+                        <div style={{ padding: '12px', background: '#f8fafc', borderRadius: '8px', borderLeft: '3px solid #0a58d0' }}>
+                            <div style={{ fontSize: '12px', fontWeight: '600', marginBottom: '4px', color: '#334155' }}>Gợi ý hành động</div>
+                            <p style={{ fontSize: '12px', lineHeight: '1.5', margin: 0, color: '#64748b' }}>{topIssue.suggestion}</p>
+                        </div>
+                    </div>
+
+                    {/* Why & Strength - Side by side */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                        <div style={{ background: 'white', borderRadius: '12px', padding: '18px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', border: '1px solid #e5e7eb' }}>
+                            <div style={{ fontSize: '13px', fontWeight: '600', marginBottom: '10px', color: '#0a58d0' }}>Tại sao quan trọng?</div>
+                            <div style={{ fontSize: '12px', lineHeight: '1.6', color: '#64748b' }}>
+                                <div style={{ marginBottom: '6px' }}>• Ảnh hưởng {Math.round((aspectStats[topIssue.aspect]?.negative || 0) / totalReviews * 100)}% KH</div>
+                                <div style={{ marginBottom: '6px' }}>• Giảm rating sản phẩm</div>
+                                <div>• Retention &lt; 70%</div>
                             </div>
                         </div>
 
-                        {/* Strength Card */}
-                        <div className="suggestion-card strength-card">
-                            <div className="suggestion-header">
-                                <span className="suggestion-icon">✅</span>
-                                <h4>Điểm mạnh</h4>
-                            </div>
-                            <p className="suggestion-text">
-                                {topStrength.description || `Khách hàng rất hài lòng về `}<span className="highlight-green">{topStrength.aspect}</span>
+                        <div style={{ background: 'white', borderRadius: '12px', padding: '18px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', border: '1px solid #e5e7eb' }}>
+                            <div style={{ fontSize: '13px', fontWeight: '600', marginBottom: '10px', color: '#0a58d0' }}>Điểm mạnh</div>
+                            <p style={{ fontSize: '12px', lineHeight: '1.6', margin: '0 0 8px 0', color: '#64748b' }}>
+                                KH hài lòng về <strong style={{ color: '#1e293b' }}>{topStrength.aspect}</strong>
                             </p>
-                        </div>
-
-                        {/* Impact Card */}
-                        <div className="suggestion-card impact-card">
-                            <div className="suggestion-header">
-                                <span className="suggestion-icon">📈</span>
-                                <h4>Tác động dự kiến:</h4>
+                            <div style={{ fontSize: '11px', color: '#94a3b8', fontStyle: 'italic' }}>
+                                💡 Nhấn mạnh trong marketing
                             </div>
-                            <ul className="impact-list">
-                                {impacts.map((impact, idx) => (
-                                    <li key={idx}>• {impact}</li>
-                                ))}
-                            </ul>
                         </div>
+                    </div>
+
+                    {/* Impact */}
+                    <div style={{ background: 'white', borderRadius: '12px', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', border: '1px solid #e5e7eb' }}>
+                        <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '12px', color: '#0a58d0' }}>Tác động dự kiến</div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+                            {impacts.map((impact, idx) => (
+                                <div key={idx} style={{ padding: '12px', background: '#f8fafc', borderRadius: '8px', textAlign: 'center', border: '1px solid #e2e8f0' }}>
+                                    <div style={{ fontSize: '12px', fontWeight: '600', color: '#334155', lineHeight: '1.4' }}>{impact}</div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Column 3: Stats & Actions */}
+                <div className="grid-column" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    {/* Donut Chart */}
+                    <div style={{ background: 'white', borderRadius: '12px', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', border: '1px solid #e5e7eb' }}>
+                        <h3 style={{ fontSize: '14px', fontWeight: '600', marginBottom: '16px', color: '#334155' }}>Thống kê</h3>
+                        <div style={{ display: 'flex', justifyContent: 'center' }}>
+                            <svg viewBox="0 0 200 200" width="160" height="160">
+                                <path d={calculateDonutPath(0, positivePercent)} fill="#10b981 " />
+                                <path d={calculateDonutPath(positivePercent, neutralPercent)} fill="#f59e0b " />
+                                <path d={calculateDonutPath(parseFloat(positivePercent) + parseFloat(neutralPercent), negativePercent)} fill="#ef4444 " />
+                                <text x="100" y="100" textAnchor="middle" style={{ fontSize: '32px', fill: '#10b981 ', fontWeight: '700' }}>{positivePercent}%</text>
+                                <text x="100" y="120" textAnchor="middle" style={{ fontSize: '12px', fill: '#64748b' }}>Tích cực</text>
+                            </svg>
+                        </div>
+                    </div>
+
+                    {/* Top Aspects */}
+                    <div style={{ background: 'white', borderRadius: '12px', padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', border: '1px solid #e5e7eb' }}>
+                        <div style={{ fontSize: '13px', fontWeight: '600', marginBottom: '10px', color: '#0a58d0' }}>Tốt nhất</div>
+                        {Object.entries(aspectStats)
+                            .filter(([_, data]) => (data.positive + data.neutral + data.negative) > 0)
+                            .sort((a, b) => b[1].positive - a[1].positive)
+                            .slice(0, 2)
+                            .map(([aspect, data]) => {
+                                const aspectNames = {
+                                    'Price': 'Giá cả', 'Shipping': 'Vận chuyển', 'Outlook': 'Ngoại quan',
+                                    'Quality': 'Chất lượng', 'Size': 'Size', 'Shop_Service': 'Dịch vụ',
+                                    'General': 'Chung', 'Others': 'Khác'
+                                };
+                                return (
+                                    <div key={aspect} style={{ fontSize: '12px', marginBottom: '6px', color: '#64748b', display: 'flex', justifyContent: 'space-between' }}>
+                                        <span>{aspectNames[aspect]}</span>
+                                        <strong style={{ color: '#0a58d0' }}>{data.positive}</strong>
+                                    </div>
+                                );
+                            })}
+                    </div>
+
+                    <div style={{ background: 'white', borderRadius: '12px', padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', border: '1px solid #e5e7eb' }}>
+                        <div style={{ fontSize: '13px', fontWeight: '600', marginBottom: '10px', color: '#64748b' }}>Cần cải thiện</div>
+                        {Object.entries(aspectStats)
+                            .filter(([_, data]) => (data.positive + data.neutral + data.negative) > 0)
+                            .sort((a, b) => b[1].negative - a[1].negative)
+                            .slice(0, 2)
+                            .map(([aspect, data]) => {
+                                const aspectNames = {
+                                    'Price': 'Giá cả', 'Shipping': 'Vận chuyển', 'Outlook': 'Ngoại quan',
+                                    'Quality': 'Chất lượng', 'Size': 'Size', 'Shop_Service': 'Dịch vụ',
+                                    'General': 'Chung', 'Others': 'Khác'
+                                };
+                                return (
+                                    <div key={aspect} style={{ fontSize: '12px', marginBottom: '6px', color: '#64748b', display: 'flex', justifyContent: 'space-between' }}>
+                                        <span>{aspectNames[aspect]}</span>
+                                        <strong style={{ color: '#94a3b8' }}>{data.negative}</strong>
+                                    </div>
+                                );
+                            })}
+                    </div>
+
+                    {/* Actions */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <button style={{ 
+                            width: '100%', 
+                            padding: '10px', 
+                            fontSize: '13px',
+                            fontWeight: '600',
+                            background: '#0a58d0',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            transition: 'background 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.background = '#0847b0'}
+                        onMouseLeave={(e) => e.currentTarget.style.background = '#0a58d0'}>
+                            Xem chi tiết
+                        </button>
+                        {/* <button style={{ 
+                            width: '100%', 
+                            padding: '10px', 
+                            fontSize: '13px',
+                            fontWeight: '500',
+                            background: 'white',
+                            color: '#0a58d0',
+                            border: '1px solid #0a58d0',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.background = '#0a58d0';
+                            e.currentTarget.style.color = 'white';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.background = 'white';
+                            e.currentTarget.style.color = '#0a58d0';
+                        }}>
+                            Xuất báo cáo
+                        </button> */}
                     </div>
                 </div>
             </div>
             )}
 
-            {/* Footer Section */}
-            <div className="footer-actions">
-                <button className="btn-primary">
-                    <span className="btn-icon">🔍</span>
-                    Xem chi tiết feedback
-                </button>
-                <button className="btn-secondary">
-                    <span className="btn-icon">📝</span>
-                    Tạo nhiệm vụ cải tiến
-                </button>
-                <button className="btn-secondary">
-                    <span className="btn-icon">📊</span>
-                    Xuất báo cáo insights
-                </button>
-            </div>
         </div>
     );
 };

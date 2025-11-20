@@ -1,4 +1,3 @@
-// Shopee Login Component - Handles mock OAuth flow with Redux
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Button, Modal, message, Badge, Tag } from 'antd';
@@ -18,12 +17,8 @@ const ShopeeLogin = ({ onLoginSuccess, onLogout }) => {
         shop_name: 'Mock Shop'
     } : null;
 
-    const handleLogin = () => {
-        setShowModal(true);
-    };
-
-    const handleContinue = async () => {
-        setLoading(true);
+    const handleLogin = async () => {
+         setLoading(true);
         
         try {
             // Dispatch Redux action to init OAuth
@@ -46,7 +41,9 @@ const ShopeeLogin = ({ onLoginSuccess, onLogout }) => {
     };
 
     const handleLogout = () => {
-        Modal.confirm({
+        // ✅ Use Modal.confirm with explicit import
+        const { confirm } = Modal;
+        confirm({
             title: 'Xác nhận đăng xuất',
             content: 'Bạn có chắc chắn muốn đăng xuất khỏi Shopee?',
             okText: 'Đăng xuất',
@@ -82,10 +79,6 @@ const ShopeeLogin = ({ onLoginSuccess, onLogout }) => {
                 <div className="shopee-auth-info">
                     <div className="shopee-shop-badge">
                         <ShopOutlined style={{ fontSize: '20px', color: '#ee4d2d' }} />
-                        <div className="shop-info">
-                            <span className="shop-name">{shopInfo?.shop_name}</span>
-                            <span className="shop-id">ID: {shopInfo?.shop_id}</span>
-                        </div>
                         <Tag color="success" icon={<CheckCircleOutlined />}>
                             Đã kết nối
                         </Tag>
@@ -100,110 +93,6 @@ const ShopeeLogin = ({ onLoginSuccess, onLogout }) => {
                     </Button>
                 </div>
             )}
-
-            <Modal
-                title={
-                    <div className="modal-title">
-                        <ShopOutlined style={{ fontSize: '28px', color: '#ee4d2d' }} />
-                        <span>Đăng nhập Shopee Seller</span>
-                        <Tag color="orange" icon={<LockOutlined />}>Demo Mode</Tag>
-                    </div>
-                }
-                open={showModal}
-                onCancel={() => !loading && setShowModal(false)}
-                footer={[
-                    <Button key="cancel" onClick={() => setShowModal(false)} disabled={loading}>
-                        Hủy
-                    </Button>,
-                    <Button
-                        key="continue"
-                        type="primary"
-                        icon={<ArrowRightOutlined />}
-                        onClick={handleContinue}
-                        loading={loading}
-                        className="continue-btn"
-                    >
-                        Tiếp tục đăng nhập
-                    </Button>,
-                ]}
-                width={650}
-                className="shopee-login-modal"
-            >
-                <div className="shopee-modal-content">
-                    <div className="modal-section demo-info">
-                        <div className="section-icon">
-                            <InfoCircleOutlined />
-                        </div>
-                        <div className="section-content">
-                            <h4>📌 Thông tin Demo</h4>
-                            <ul>
-                                <li>Môi trường <strong>giả lập hoàn toàn</strong></li>
-                                <li>Không cần tài khoản Shopee thật</li>
-                                <li>Dữ liệu demo: <strong>50+ đơn hàng, 30+ sản phẩm</strong></li>
-                                <li>Shop demo: <code>Demo Fashion Store (#123456789)</code></li>
-                            </ul>
-                        </div>
-                    </div>
-
-                    <div className="modal-section oauth-flow">
-                        <div className="section-icon">
-                            <LockOutlined />
-                        </div>
-                        <div className="section-content">
-                            <h4>🔐 Quy trình OAuth 2.0</h4>
-                            <div className="flow-steps">
-                                <div className="flow-step">
-                                    <span className="step-number">1</span>
-                                    <span className="step-text">Chuyển hướng tới Shopee OAuth</span>
-                                </div>
-                                <div className="flow-step">
-                                    <span className="step-number">2</span>
-                                    <span className="step-text">Xác nhận cấp quyền (auto)</span>
-                                </div>
-                                <div className="flow-step">
-                                    <span className="step-number">3</span>
-                                    <span className="step-text">Nhận authorization code</span>
-                                </div>
-                                <div className="flow-step">
-                                    <span className="step-number">4</span>
-                                    <span className="step-text">Đổi code → access token</span>
-                                </div>
-                                <div className="flow-step">
-                                    <span className="step-number">5</span>
-                                    <span className="step-text">Tải dữ liệu shop về Dashboard</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="modal-section permissions">
-                        <div className="section-icon">
-                            <CheckCircleOutlined />
-                        </div>
-                        <div className="section-content">
-                            <h4>✅ Quyền truy cập</h4>
-                            <div className="permission-grid">
-                                <div className="permission-item">
-                                    <CheckCircleOutlined style={{ color: '#52c41a' }} />
-                                    <span>Thông tin Shop</span>
-                                </div>
-                                <div className="permission-item">
-                                    <CheckCircleOutlined style={{ color: '#52c41a' }} />
-                                    <span>Đơn hàng</span>
-                                </div>
-                                <div className="permission-item">
-                                    <CheckCircleOutlined style={{ color: '#52c41a' }} />
-                                    <span>Sản phẩm</span>
-                                </div>
-                                <div className="permission-item">
-                                    <CheckCircleOutlined style={{ color: '#52c41a' }} />
-                                    <span>Doanh thu</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </Modal>
         </div>
     );
 };

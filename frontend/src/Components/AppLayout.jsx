@@ -1,6 +1,8 @@
 import React from 'react';
 import { Layout, Menu, Button, ConfigProvider } from 'antd';
 import { Outlet, Link, useLocation } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import ShopeeLogin from './ShopeeLogin';
 import Logo from '../assets/img/Logo.jpg';
 import './AppLayout.css';
 
@@ -8,6 +10,8 @@ const { Header, Content } = Layout;
 
 const AppLayout = () => {
   const location = useLocation();
+  const { tokens } = useSelector((state) => state.auth);
+  const isLoggedIn = tokens?.access_token;
 
   const menuItems = [
     { key: '/', label: <Link to="/">Trang chủ</Link> },
@@ -51,12 +55,18 @@ const AppLayout = () => {
 
             {/* User Controls */}
             <div className="user-controls">
-              <Link to="/login" className="login-text">
-                Đăng nhập
-              </Link>
-              <Button type="primary" size="large" className="trial-button">
-                Dùng thử miễn phí
-              </Button>
+              {!isLoggedIn ? (
+                <>
+                  <Link to="/login" className="login-text">
+                    Đăng nhập
+                  </Link>
+                  <Button type="primary" size="large" className="trial-button">
+                    Dùng thử miễn phí
+                  </Button>
+                </>
+              ) : (
+                <ShopeeLogin />
+              )}
             </div>
           </div>
         </Header>

@@ -1,8 +1,8 @@
 /**
  * Tech Store Shopee Mock Data Generator
  * Focus: Đồ công nghệ và phụ kiện
- * Period: Jan 2025 - Oct 2025 (10 months)
- * Orders: 250 orders
+ * Period: Nov 2023 - Oct 2025 (2 years, 48 periods of 15 days)
+ * Orders: 1200 orders (~50/month)
  * Products: 55 tech products
  */
 
@@ -125,10 +125,10 @@ const PRODUCTS = [
 // Logistics carriers
 const CARRIERS = ['SPX Express', 'GHN', 'GHTK', 'Ninja Van', 'Viettel Post', 'J&T Express'];
 
-// Generate order with timestamp in 2025 (Jan - Oct)
+// Generate order with timestamp over 2 years (Nov 2023 - Oct 2025)
 function generateOrder(index) {
-    // Random date between Jan 1, 2025 and Oct 31, 2025
-    const startDate = new Date('2025-01-01').getTime() / 1000;
+    // Random date between Nov 1, 2023 and Oct 31, 2025 (2 years = 48 periods of 15 days)
+    const startDate = new Date('2023-11-01').getTime() / 1000;
     const endDate = new Date('2025-10-31').getTime() / 1000;
     const createTime = startDate + Math.random() * (endDate - startDate);
     
@@ -217,8 +217,8 @@ function generateOrder(index) {
     };
 }
 
-// Generate 250 orders
-const MOCK_ORDERS = Array.from({ length: 250 }, (_, i) => generateOrder(i + 1));
+// Generate 1200 orders over 2 years (avg ~50 orders/month, more realistic for tech store)
+const MOCK_ORDERS = Array.from({ length: 1200 }, (_, i) => generateOrder(i + 1));
 
 // Generate products with sales data
 const MOCK_PRODUCTS = PRODUCTS.map((product, index) => {
@@ -288,6 +288,11 @@ export {
     MOCK_PRODUCTS,
     CATEGORIES
 };
+
+// Helper function to get orders (for compatibility)
+export function generateOrders() {
+    return MOCK_ORDERS;
+}
 
 // ============================================
 // OPTIMIZED: Pre-generate indexes for fast lookup

@@ -284,10 +284,6 @@ const DashboardPage = () => {
                     >
                         Làm mới
                     </Button>
-                    <ShopeeLogin 
-                        onLoginSuccess={handleLoginSuccess}
-                        onLogout={handleLogout}
-                    />
                 </div>
             </div>
 

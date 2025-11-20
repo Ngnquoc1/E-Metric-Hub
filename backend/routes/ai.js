@@ -260,8 +260,8 @@ router.post('/simple-prompt', async (req, res) => {
 
     try {
         // --- 2. Khởi tạo và Cấu hình Model ---
-        console.log('🚀 Initializing Gemini model: gemini-2.0-flash-exp');
-        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+        console.log('🚀 Initializing Gemini model: gemini-2.0-flash-lite');
+        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-lite' });
 
         // Cấu hình chỉ số output (Tùy chọn)
         const generationConfig = {
@@ -272,10 +272,7 @@ router.post('/simple-prompt', async (req, res) => {
         console.log('📤 Sending message to Gemini...');
         // Sử dụng model.generateContent thay vì model.startChat
         // vì ta không cần quản lý lịch sử (history)
-        const result = await model.generateContent({
-            contents: [{ role: 'user', parts: [{ text: prompt }] }],
-            config: generationConfig
-        });
+        const result = await model.generateContent(prompt, generationConfig);
 
         const response = await result.response;
         const text = response.text();

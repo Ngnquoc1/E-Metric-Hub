@@ -29,12 +29,6 @@ const FeaturesPage = () => {
             name: 'Phân tích khách hàng',
             icon: chatBubblesIcon,
             status: 'active'
-        },
-        {
-            id: 'personalized-marketing',
-            name: 'Marketing cá nhân hóa',
-            icon: dartBoardIcon,
-            status: 'coming-soon'
         }
     ];
 
