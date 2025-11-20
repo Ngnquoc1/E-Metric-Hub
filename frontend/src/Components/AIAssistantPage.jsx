@@ -16,12 +16,24 @@ const AIAssistantPage = () => {
     const [currentMessage, setCurrentMessage] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [isTyping, setIsTyping] = useState(false);
-    const [isLoadingConversations, setIsLoadingConversations] = useState(true);
+    const [isLoadingConversations, setIsLoadingConversations] = useState(false);
     const messagesEndRef = useRef(null);
     
-    // ✅ Get userId from Redux auth state (consistent with other pages)
-    const { tokens } = useSelector((state) => state.auth);
-    const userId = tokens?.shop_id || 'demo-user';
+    // ✅ Get auth state from Redux
+    const { tokens, isAuthenticated } = useSelector((state) => state.auth);
+    const isGuest = !isAuthenticated || !tokens;
+    const userId = tokens?.shop_id || 'guest';
+    const shopId = tokens?.shop_id;
+    const accessToken = tokens?.access_token;
+
+    // 🔍 DEBUG: Log auth state whenever it changes
+    useEffect(() => {
+        console.log('🔄 Auth state changed:');
+        console.log('  - isAuthenticated:', isAuthenticated);
+        console.log('  - tokens:', tokens);
+        console.log('  - userId:', userId);
+        console.log('  - isGuest:', isGuest);
+    }, [isAuthenticated, tokens, userId, isGuest]);
 
     const activeConversation = conversations.find(c => c.conversationId === activeConvId);
 
@@ -34,15 +46,35 @@ const AIAssistantPage = () => {
     ];
 
     useEffect(() => {
-        // Load conversations from API
+        // 🔍 DEBUG: Log all authentication state
+        console.log('🔍 === LOAD CONVERSATIONS DEBUG ===');
+        console.log('  - isAuthenticated:', isAuthenticated);
+        console.log('  - tokens:', tokens);
+        console.log('  - tokens.shop_id:', tokens?.shop_id);
+        console.log('  - userId (computed):', userId);
+        console.log('  - isGuest:', isGuest);
+        console.log('================================');
+        
+        // ⚠️ Skip loading conversations for Guest users (no shop data)
+        if (isGuest) {
+            console.log('👥 Guest mode: No conversation history loaded');
+            handleNewChat(); // Create a temporary chat for guest
+            setIsLoadingConversations(false);
+            return;
+        }
+        
+        // Load conversations from API for authenticated users
         const fetchConversations = async () => {
             try {
                 setIsLoadingConversations(true);
+                console.log('📡 Sending request to /api/ai/conversations with userId:', userId);
                 const response = await axios.get('/api/ai/conversations', {
                     params: { userId }
                 });
                 
                 const apiConversations = response.data.conversations || [];
+                console.log('✅ Received', apiConversations.length, 'conversations from backend');
+                console.log('📝 Conversation IDs:', apiConversations.map(c => c.conversationId));
                 setConversations(apiConversations);
                 
                 if (apiConversations.length > 0) {
@@ -63,7 +95,7 @@ const AIAssistantPage = () => {
         };
         
         fetchConversations();
-    }, []);
+    }, [tokens, isAuthenticated]); // ✅ Re-run when tokens or isAuthenticated changes
 
     useEffect(() => {
         // Scroll to the bottom of the message list
@@ -152,10 +184,24 @@ const AIAssistantPage = () => {
 
         try {
             // 2. Send request to backend (backend will save to MongoDB)
+            // Attach shop credentials if user is logged in with Shopee
+            const shopeeTokensRaw = localStorage.getItem('shopee_tokens');
+            let shopeePayload = {};
+            if (shopeeTokensRaw) {
+                try {
+                    const tokens = JSON.parse(shopeeTokensRaw);
+                    if (tokens?.shop_id) shopeePayload.shop_id = tokens.shop_id;
+                    if (tokens?.access_token) shopeePayload.access_token = tokens.access_token;
+                } catch (err) {
+                    console.warn('Invalid shopee_tokens in localStorage:', err);
+                }
+            }
+
             const response = await axios.post('/api/ai/chat', {
                 prompt: textToSend,
                 conversationId: activeConvId,
-                userId: userId
+                userId: userId,
+                ...shopeePayload
             });
 
             // Simulate typing delay for better UX
@@ -205,13 +251,28 @@ const AIAssistantPage = () => {
     return (
         <Layout className="ai-assistant-page">
             <Sider width={250} className="ai-sider">
-                <ConversationHistory
-                    conversations={conversations}
-                    activeConvId={activeConvId}
-                    onSelect={handleSelectConversation}
-                    onNewChat={handleNewChat}
-                    onDelete={handleDeleteConversation}
-                />
+                {isGuest ? (
+                    <div style={{ padding: '20px', textAlign: 'center' }}>
+                        <div style={{ 
+                            background: '#f0f0f0', 
+                            borderRadius: '8px', 
+                            padding: '16px',
+                            marginBottom: '16px'
+                        }}>
+                            <UserOutlined style={{ fontSize: '32px', color: '#bfbfbf', marginBottom: '8px' }} />
+                            <div style={{ fontSize: '14px', color: '#8c8c8c' }}>Chế độ Khách</div>
+                            <div style={{ fontSize: '12px', color: '#bfbfbf', marginTop: '4px' }}>Không lưu lịch sử</div>
+                        </div>
+                    </div>
+                ) : (
+                    <ConversationHistory
+                        conversations={conversations}
+                        activeConvId={activeConvId}
+                        onSelect={handleSelectConversation}
+                        onNewChat={handleNewChat}
+                        onDelete={handleDeleteConversation}
+                    />
+                )}
             </Sider>
             <Layout className="chat-layout">
                 <Content className="chat-content">
@@ -229,6 +290,23 @@ const AIAssistantPage = () => {
                                 <div className="ai-avatar-large">
                                     <RobotOutlined />
                                 </div>
+                                {isGuest && (
+                                    <div style={{ 
+                                        background: '#fff7e6', 
+                                        border: '1px solid #ffd591', 
+                                        borderRadius: '8px', 
+                                        padding: '12px 16px', 
+                                        marginBottom: '16px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px'
+                                    }}>
+                                        <span style={{ fontSize: '20px' }}>👥</span>
+                                        <span style={{ color: '#d46b08' }}>
+                                            <strong>Chế độ Khách:</strong> Bạn đang chat không có dữ liệu shop. Đăng nhập để AI tư vấn dựa trên dữ liệu của bạn.
+                                        </span>
+                                    </div>
+                                )}
                                 <Title level={2} className="welcome-title">
                                     Chào mừng đến với AI Assistant 🚀
                                 </Title>

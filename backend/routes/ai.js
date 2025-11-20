@@ -1,12 +1,11 @@
 import express from 'express';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import Conversation from '../models/Conversation.js';
+import { ragService } from '../services/ragService.js';
 
 const router = express.Router();
 
-
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-
 
 // Test endpoint to check Gemini connection
 router.get('/test', async (req, res) => {
@@ -45,7 +44,8 @@ router.get('/test', async (req, res) => {
 });
 
 router.post('/chat', async (req, res) => {
-    const { prompt, conversationId, userId } = req.body;
+    // Expect prompt, conversationId, userId and optionally shop_id / access_token
+    const { prompt, conversationId, userId, shop_id, shopId, access_token } = req.body;
 
     console.log('📨 Received chat request:');
     console.log('  - Prompt:', prompt?.substring(0, 50) + '...');
@@ -75,8 +75,30 @@ router.post('/chat', async (req, res) => {
         console.log('🔍 Finding or creating conversation in database...');
         const conv = await Conversation.findOrCreate(conversationId, userId || 'anonymous');
 
-        if (!conv) {
-            throw new Error('Failed to create or find conversation in database');
+        // BƯỚC 1.5: Retrieve relevant context using RAG only when shop information is provided
+        // We require a shop identifier (shop_id or shopId) or access_token to run shop-scoped RAG
+        console.log('🔍 Checking whether RAG should run for this request...');
+        let ragContext = '';
+        const effectiveShopId = shopId || shop_id;
+
+        if (effectiveShopId || access_token) {
+            console.log('🔍 Retrieving relevant context using RAG for shop:', effectiveShopId || '(access_token provided)');
+            try {
+                // If ragService supports shop-scoped retrieval in future, pass user/shop info.
+                // For now, retrieve hybrid context but avoid exposing global data when shop is absent.
+                const retrievedDocs = await ragService.retrieveContext(prompt, 3, effectiveShopId);
+                if (retrievedDocs && retrievedDocs.length > 0) {
+                    ragContext = ragService.formatContextForPrompt(retrievedDocs);
+                    console.log(`✅ Retrieved ${retrievedDocs.length} relevant documents`);
+                } else {
+                    console.log('ℹ️  No relevant context found');
+                }
+            } catch (ragError) {
+                console.error('⚠️  RAG retrieval error:', ragError.message);
+                // Continue without RAG context
+            }
+        } else {
+            console.log('ℹ️  No shop credentials provided — skipping RAG to avoid data leakage');
         }
 
         // BƯỚC 2: Convert messages từ DB sang format Gemini
@@ -84,7 +106,14 @@ router.post('/chat', async (req, res) => {
         const historyForGemini = conv.toGeminiHistory();
         console.log('  - History length:', historyForGemini.length, 'messages');
 
-        // BƯỚC 3: Gọi Gemini API với history
+        // BƯỚC 3: Prepare prompt with RAG context
+        let enhancedPrompt = prompt;
+        if (ragContext) {
+            // Add RAG context to the prompt
+            enhancedPrompt = `${ragContext}\n\nDựa trên thông tin tham khảo ở trên, hãy trả lời câu hỏi sau:\n${prompt}`;
+        }
+
+        // BƯỚC 4: Gọi Gemini API với history
         console.log('💬 Starting chat session with Gemini...');
         const chat = model.startChat({
             history: historyForGemini,
@@ -94,24 +123,25 @@ router.post('/chat', async (req, res) => {
         });
 
         console.log('📤 Sending message to Gemini...');
-        const result = await chat.sendMessage(prompt);
+        const result = await chat.sendMessage(enhancedPrompt);
         const response = await result.response;
         const text = response.text();
 
         console.log('✅ Received response from Gemini');
         console.log('  - Response length:', text.length);
 
-        // BƯỚC 4: Lưu user message và AI response vào DB
+        // BƯỚC 5: Lưu user message và AI response vào DB
         console.log('💾 Saving messages to database...');
         await conv.addMessage('user', prompt);
         await conv.addMessage('ai', text);
         console.log('✅ Messages saved successfully');
 
-        // BƯỚC 5: Trả về response
+        // BƯỚC 6: Trả về response
         res.json({ 
             reply: text,
             conversationId: conv.conversationId,
-            messageCount: conv.messageCount
+            messageCount: conv.messageCount,
+            ragUsed: !!ragContext // Indicate if RAG was used
         });
 
     } catch (error) {
@@ -132,20 +162,30 @@ router.post('/chat', async (req, res) => {
 router.get('/conversations', async (req, res) => {
     const { userId } = req.query;
 
-    console.log('📋 Fetching conversations for user:', userId || 'anonymous');
-
+    console.log('🔍 === BACKEND CONVERSATIONS DEBUG ===');
+    console.log('  - Received userId from query:', userId || 'anonymous');
+    
     try {
+        // 🔍 DEBUG: Check all userIds in database
+        const allConversations = await Conversation.find({}).select('userId conversationId title').limit(20);
+        const uniqueUserIds = [...new Set(allConversations.map(c => c.userId))];
+        console.log('  - All userIds in DB:', uniqueUserIds);
+        console.log('  - Total conversations in DB:', allConversations.length);
+        console.log('  - Searching for userId:', userId || 'anonymous');
+        console.log('===================================');
+        
         // findByUserId đã có .sort() và .limit() trong static method
         const conversations = await Conversation.findByUserId(userId || 'anonymous', 50);
 
-        console.log('✅ Found', conversations.length, 'conversations');
+        console.log('✅ Found', conversations.length, 'conversations for userId:', userId);
 
         res.json({ 
             conversations: conversations.map(conv => ({
                 conversationId: conv.conversationId,
                 title: conv.title,
                 messageCount: conv.messageCount,
-                lastUpdated: conv.updatedAt
+                lastUpdated: conv.updatedAt,
+                messages: conv.messages || [] // Đảm bảo frontend luôn có mảng messages
             }))
         });
 

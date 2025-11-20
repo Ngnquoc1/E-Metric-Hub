@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { checkAuth } from './store/slices/authSlice';
 import AppLayout from './Components/AppLayout';
 import LandingPage from './Components/LandingPage';
 import DashboardPage from './Components/DashboardPage';
@@ -11,7 +13,15 @@ import ErrorBoundary from './Components/ErrorBoundary';
 import './App.css';
 
 function App() {
-  const style = { padding: '50px', textAlign: 'center' }
+  const dispatch = useDispatch();
+  const style = { padding: '50px', textAlign: 'center' };
+
+  // 🔑 Check authentication on app startup
+  useEffect(() => {
+    console.log('🔍 App mounted - Checking auth from localStorage...');
+    dispatch(checkAuth());
+  }, [dispatch]);
+
   return (
     <ErrorBoundary>
       <Router>
